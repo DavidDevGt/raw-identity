@@ -14,6 +14,7 @@ const es = {
 	'lang.label': 'Idioma',
 
 	'nav.main': 'Navegación principal',
+	'nav.menu': 'Menú',
 	'nav.work': 'Proyectos',
 	'nav.videos': 'Redes',
 	'nav.how': 'Cómo trabajo',
@@ -141,6 +142,7 @@ const en: typeof es = {
 	'lang.label': 'Language',
 
 	'nav.main': 'Main navigation',
+	'nav.menu': 'Menu',
 	'nav.work': 'Projects',
 	'nav.videos': 'Social',
 	'nav.how': 'How I work',
