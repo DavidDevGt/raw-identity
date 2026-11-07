@@ -46,8 +46,8 @@ const cover = shots[0] && { src: coverImage ?? shots[0].src, alt: coverAlt ?? sh
 				highlights.length > 0 && (
 					<dl class="highlights">
 						{highlights.map(({ value, label }) => (
-							<div>
-								<dd>{value}</dd>
+							<div class:list={[{ long: value.length > 7 }]}>
+								<dd>{value.split(/(?<=×)/).map((part, index, parts) => (index < parts.length - 1 ? <>{part}<wbr /></> : part))}</dd>
 								<dt>{label}</dt>
 							</div>
 						))}
@@ -222,7 +222,13 @@ const cover = shots[0] && { src: coverImage ?? shots[0].src, alt: coverAlt ?? sh
 		font-family: var(--font-head);
 		font-size: clamp(2.25rem, 5cqi, 3.5rem);
 		line-height: 1;
-		white-space: nowrap;
+	}
+
+	/* A long value ("1080×1920") does not fit two to a row on a phone: one box per row. */
+	@container (max-width: 30rem) {
+		.highlights:has(.long) {
+			grid-template-columns: minmax(0, 1fr);
+		}
 	}
 
 	.highlights dt {

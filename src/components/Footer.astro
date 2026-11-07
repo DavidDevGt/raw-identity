@@ -7,16 +7,14 @@ interface Props {
 }
 
 const { lang } = Astro.props;
-const year = new Date().getFullYear();
 ---
 
 <footer class="site-footer tone-ink">
 	<div class="checker"></div>
 	<div class="container">
-		<p class="copy">© {year} {t(lang, 'site.name')}. {t(lang, 'footer.text')}</p>
+		<p class="copy">{t(lang, 'footer.text')}</p>
 	</div>
-	<!-- Decorative wordmark: the name is already in the line above. -->
-	<p class="wordmark" aria-hidden="true">{t(lang, 'site.name')}</p>
+	<p class="wordmark">{t(lang, 'site.name')}</p>
 </footer>
 
 <style>
