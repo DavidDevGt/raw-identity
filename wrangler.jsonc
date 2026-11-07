@@ -1,0 +1,12 @@
+{
+	// Static site served by Cloudflare Workers static assets. There is no Worker script:
+	// `wrangler deploy` uploads dist/ and applies public/_headers and public/_redirects.
+	// The name must match the Worker created in the Cloudflare dashboard.
+	"name": "raw-identity",
+	"compatibility_date": "2026-11-06",
+	"assets": {
+		"directory": "./dist",
+		// Unknown paths get the nearest 404.html that Astro builds.
+		"not_found_handling": "404-page"
+	}
+}
