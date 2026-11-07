@@ -172,10 +172,6 @@ const onWork = Astro.url.pathname.startsWith(workHref.replace(/\/$/, ''));
 		margin-top: var(--space-3);
 	}
 
-	.panel :global(.lang-switcher ul) {
-		width: fit-content;
-	}
-
 	/* No JavaScript, no toggle: keep everything reachable. */
 	@media (scripting: none) {
 		.panel {
