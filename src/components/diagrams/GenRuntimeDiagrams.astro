@@ -137,14 +137,16 @@ const c = copy[lang];
 					{c.map.host.items.map((item) => <li>{item}</li>)}
 				</ul>
 			</div>
-			<p class="link link-1"><span aria-hidden="true">→</span> docker run · {c.map.link.keyframes}</p>
+			<!-- Phone only: the rail that shows both containers are started by the host. -->
+			<span class="rail" aria-hidden="true"></span>
+			<p class="link link-1"><span class="arrow" aria-hidden="true"></span> docker run · {c.map.link.keyframes}</p>
 			<div class="box app">
 				<h4>{c.map.app.name}</h4>
 				<ul>
 					{c.map.app.items.map((item) => <li>{item}</li>)}
 				</ul>
 			</div>
-			<p class="link link-2"><span aria-hidden="true">→</span> docker run · {c.map.link.takes}</p>
+			<p class="link link-2"><span class="arrow" aria-hidden="true"></span> docker run · {c.map.link.takes}</p>
 			<div class="box video">
 				<h4>{c.map.video.name}</h4>
 				<ul>
@@ -346,6 +348,85 @@ const c = copy[lang];
 		font-size: 0.8125rem;
 		font-weight: 700;
 		text-align: center;
+	}
+
+	.arrow::before {
+		content: '↓';
+	}
+
+	.rail {
+		display: none;
+	}
+
+	/*
+	 * Phone: a tree. The host is on top and a rail drops from it; each container hangs from the rail by its own
+	 * "docker run" label. Stacked with no rail, the second label looked like it went from one container to the other.
+	 */
+	@media (max-width: 59.9375rem) {
+		.map {
+			grid-template-columns: 1.25rem minmax(0, 1fr);
+		}
+
+		.host {
+			grid-column: 1 / -1;
+			grid-row: 1;
+		}
+
+		.rail {
+			display: block;
+			grid-column: 1;
+			grid-row: 2 / 6;
+			justify-self: start;
+			width: 3px;
+			/* Up into the gap, so the rail touches the host. */
+			margin: calc(-1 * var(--space-3)) 0 0 0.5rem;
+			background: var(--paper);
+		}
+
+		.link,
+		.app,
+		.video {
+			grid-column: 2;
+		}
+
+		.link-1 {
+			grid-row: 2;
+		}
+
+		.app {
+			grid-row: 3;
+		}
+
+		.link-2 {
+			grid-row: 4;
+		}
+
+		.video {
+			grid-row: 5;
+		}
+
+		.link {
+			position: relative;
+			justify-self: start;
+			max-width: 100%;
+			text-align: left;
+		}
+
+		/* The branch from the rail to its label. */
+		.link::before {
+			content: '';
+			position: absolute;
+			top: calc(50% - 1.5px);
+			right: 100%;
+			width: 0.75rem;
+			height: 3px;
+			background: var(--paper);
+		}
+
+		.services {
+			grid-column: 1 / -1;
+			grid-row: 6;
+		}
 	}
 
 	.services {
@@ -589,6 +670,10 @@ const c = copy[lang];
 		.link-2 {
 			grid-area: link2;
 			align-self: center;
+		}
+
+		.arrow::before {
+			content: '→';
 		}
 
 		.services {
