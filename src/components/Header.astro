@@ -25,22 +25,64 @@ const onWork = Astro.url.pathname.startsWith(workHref.replace(/\/$/, ''));
 <header class="site-header">
 	<div class="container bar">
 		<a class="brand" href={getRelativeLocaleUrl(lang)}>{t(lang, 'site.name')}</a>
-		<nav aria-label={t(lang, 'nav.main')} class="main-nav">
-			<ul>
-				{
-					links.map((link) => (
-						<li>
-							<a href={link.href} aria-current={link.href === workHref && onWork ? 'page' : undefined}>
-								{link.label}
-							</a>
-						</li>
-					))
-				}
-			</ul>
-		</nav>
-		<LanguageSwitcher lang={lang} />
+		<button type="button" class="menu-toggle" aria-expanded="false" aria-controls="site-menu">
+			<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="20" height="20">
+				<path class="icon-open" d="M3 6h18M3 12h18M3 18h18" />
+				<path class="icon-close" d="M5 5l14 14M19 5L5 19" />
+			</svg>
+			{t(lang, 'nav.menu')}
+		</button>
+		<!-- On a phone the links and the language switcher live in a collapsible panel. From 60rem up the
+		     panel disappears (display: contents) and its children sit in the bar. -->
+		<div class="panel" id="site-menu">
+			<nav aria-label={t(lang, 'nav.main')} class="main-nav">
+				<ul>
+					{
+						links.map((link) => (
+							<li>
+								<a href={link.href} aria-current={link.href === workHref && onWork ? 'page' : undefined}>
+									{link.label}
+								</a>
+							</li>
+						))
+					}
+				</ul>
+			</nav>
+			<LanguageSwitcher lang={lang} />
+		</div>
 	</div>
 </header>
+
+<script>
+	// Progressive enhancement: without JavaScript (see @media (scripting: none) below) the panel stays open.
+	const OPEN = 'is-open';
+
+	function setOpen(open: boolean) {
+		const panel = document.getElementById('site-menu');
+		const toggle = document.querySelector<HTMLButtonElement>('.menu-toggle');
+		if (!panel || !toggle) return;
+		panel.classList.toggle(OPEN, open);
+		toggle.setAttribute('aria-expanded', String(open));
+	}
+
+	// Delegated, so it survives the client router swapping the header. Each new page renders it closed.
+	document.addEventListener('click', (event) => {
+		const target = event.target as Element | null;
+		const toggle = target?.closest('.menu-toggle');
+		if (toggle) {
+			setOpen(toggle.getAttribute('aria-expanded') !== 'true');
+		} else if (target?.closest('#site-menu a')) {
+			setOpen(false);
+		}
+	});
+
+	document.addEventListener('keydown', (event) => {
+		const toggle = document.querySelector<HTMLButtonElement>('.menu-toggle');
+		if (event.key !== 'Escape' || toggle?.getAttribute('aria-expanded') !== 'true') return;
+		setOpen(false);
+		toggle.focus();
+	});
+</script>
 
 <style>
 	.site-header {
@@ -79,9 +121,69 @@ const onWork = Astro.url.pathname.startsWith(workHref.replace(/\/$/, ''));
 		transform: rotate(2deg);
 	}
 
-	/* On a phone the nav takes its own rows, with comfortable touch targets. */
-	.main-nav {
+	.menu-toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: 2.75rem;
+		padding: 0.25rem 0.8rem;
+		background: var(--color-surface);
+		color: var(--color-fg);
+		border: 3px solid var(--ink);
+		box-shadow: var(--shadow-sm);
+		font: inherit;
+		font-size: 0.8125rem;
+		font-weight: 800;
+		text-transform: uppercase;
+		cursor: pointer;
+	}
+
+	.menu-toggle:hover,
+	.menu-toggle[aria-expanded='true'] {
+		background: var(--color-lemon);
+		color: var(--on-color);
+	}
+
+	.menu-toggle svg {
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 3;
+		stroke-linecap: square;
+	}
+
+	.menu-toggle[aria-expanded='false'] .icon-close,
+	.menu-toggle[aria-expanded='true'] .icon-open {
+		display: none;
+	}
+
+	/* On a phone the panel is closed until the toggle opens it, then the nav takes its own rows. */
+	.panel {
+		display: none;
 		order: 3;
+		width: 100%;
+		padding-block: var(--space-2) var(--space-1);
+	}
+
+	.panel.is-open {
+		display: block;
+	}
+
+	.panel :global(.lang-switcher) {
+		margin-top: var(--space-3);
+	}
+
+	/* No JavaScript, no toggle: keep everything reachable. */
+	@media (scripting: none) {
+		.panel {
+			display: block;
+		}
+
+		.menu-toggle {
+			display: none;
+		}
+	}
+
+	.main-nav {
 		width: 100%;
 	}
 
@@ -147,8 +249,20 @@ const onWork = Astro.url.pathname.startsWith(workHref.replace(/\/$/, ''));
 			flex-wrap: nowrap;
 		}
 
+		.menu-toggle {
+			display: none;
+		}
+
+		.panel,
+		.panel.is-open {
+			display: contents;
+		}
+
+		.panel :global(.lang-switcher) {
+			margin-top: 0;
+		}
+
 		.main-nav {
-			order: 0;
 			width: auto;
 		}
 
