@@ -1,0 +1,1248 @@
+---
+import { getCollection } from 'astro:content';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import Arrow from '../../components/Arrow.astro';
+import CaseStudyCard from '../../components/CaseStudyCard.astro';
+import Mascot from '../../components/Mascot.astro';
+import Section from '../../components/Section.astro';
+import StarBurst from '../../components/StarBurst.astro';
+import CreatorProfile from '../../components/CreatorProfile.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { locales } from '../../i18n/paths';
+import { t } from '../../i18n/ui';
+
+export function getStaticPaths() {
+	return locales.map((lang) => ({ params: { lang } }));
+}
+
+const { lang } = Astro.params;
+
+const cases = (await getCollection('caseStudies', (e) => e.data.lang === lang && !e.data.draft))
+	.sort((a, b) => a.data.order - b.data.order)
+	.slice(0, 5);
+
+// Long enough to overflow the widest screen while the tape slides.
+const tape = Array.from({ length: 5 }, () => t(lang, 'tape.items')).flat();
+
+const email = 'josuedavidvl18@gmail.com';
+// Only what the page itself states: name, role, country, and the profiles it links to.
+const homeUrl = new URL(Astro.url.pathname, Astro.site).href;
+const structured = [
+	{
+		'@type': 'Person',
+		name: t(lang, 'site.name'),
+		jobTitle: t(lang, 'site.role'),
+		description: t(lang, 'site.description'),
+		url: homeUrl,
+		address: { '@type': 'PostalAddress', addressCountry: 'GT' },
+		sameAs: [
+			'https://github.com/DavidDevGt',
+			'https://www.linkedin.com/in/jdavidvl/',
+			'https://www.youtube.com/@daviddevgt',
+			'https://www.tiktok.com/@daviddevgt',
+			'https://www.instagram.com/daviddevgt/',
+		],
+	},
+	{ '@type': 'WebSite', name: t(lang, 'site.name'), url: homeUrl, inLanguage: lang },
+];
+---
+
+<BaseLayout
+	lang={lang}
+	title={`${t(lang, 'site.name')} · ${t(lang, 'site.role')}`}
+	description={t(lang, 'site.description')}
+	structured={structured}
+>
+	<section class="hero tone-violet dots">
+		<div class="scene" aria-hidden="true">
+			<div class="rays spin"></div>
+			<div class="ghost px-far hero-ghost" data-word={t(lang, 'site.role')}></div>
+			<div class="hero-ring shape-ring px-back"></div>
+			<div class="hero-checker shape-checker px-far"></div>
+		</div>
+		<div class="container hero-grid">
+			<div class="hero-copy">
+				<p class="tag eyebrow">{t(lang, 'hero.eyebrow')}</p>
+				<h1 class="hero-title">
+					{
+						t(lang, 'hero.title').map((line) => (
+							<>
+								<span class="line">
+									<span class:list={[line.mark && ['mark', `mark-${line.mark}`]]}>{line.text}</span>
+								</span>{' '}
+							</>
+						))
+					}
+				</h1>
+				<p class="hero-lead">{t(lang, 'hero.lead')}</p>
+				<p class="actions">
+					<a class="btn btn-aqua" href={getRelativeLocaleUrl(lang, 'work')}>
+						{t(lang, 'hero.cta.work')}
+						<Arrow />
+					</a>
+					<a class="btn btn-outline" href="#contact">{t(lang, 'hero.cta.contact')}</a>
+				</p>
+			</div>
+
+			<div class="hero-side">
+				<div class="hero-art">
+					<!-- The network cable tying the cloud to the server: both sit on the same parallax layer. -->
+					<svg class="art-cable px-back" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+						<path d="M12 52C4 18 30 6 42 18 50 28 34 36 32 24 30 10 62-6 84 14" />
+						<path class="cable-flow" d="M12 52C4 18 30 6 42 18 50 28 34 36 32 24 30 10 62-6 84 14" />
+					</svg>
+					<div class="art-server px-back"><Mascot name="server" /></div>
+					<div class="art-cloud px-back"><Mascot name="cloud" /></div>
+					<div class="art-main px-mid"><Mascot /></div>
+					<div class="art-handheld px-mid"><Mascot name="handheld" /></div>
+					<div class="art-star px-near"><StarBurst label={t(lang, 'hero.sticker')} /></div>
+					<p class="badge neo">
+						<strong>{t(lang, 'site.name')}</strong>
+						<span>{t(lang, 'site.role')}</span>
+					</p>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<div class="tape-clip" aria-hidden="true">
+		<div class="tape-wrap">
+			<ul class="tape">
+				{tape.map((item) => <li data-item={item}></li>)}
+			</ul>
+		</div>
+	</div>
+
+	<Section id="work" title={t(lang, 'work.title')} lead={t(lang, 'work.lead')}>
+		<Fragment slot="scene">
+			<div class="work-stripes shape-stripes px-far"></div>
+			<div class="work-ring shape-ring px-back"></div>
+			<div class="work-server px-near"><span class="sticker"><Mascot name="server" /></span></div>
+		</Fragment>
+		{
+			cases.length === 0 ? (
+				<p>{t(lang, 'work.empty')}</p>
+			) : (
+				<ul class="cards cards-home">
+					{cases.map((entry, index) => (
+						<li>
+							<CaseStudyCard entry={entry} lang={lang} lead={index < 2} />
+						</li>
+					))}
+				</ul>
+			)
+		}
+	</Section>
+
+	<Section id="videos" title={t(lang, 'videos.title')} lead={t(lang, 'videos.lead')} tone="violet" ghostReverse>
+		<Fragment slot="scene">
+			<div class="videos-ring shape-ring px-back"></div>
+			<div class="videos-checker shape-checker px-far"></div>
+		</Fragment>
+		<CreatorProfile lang={lang} />
+	</Section>
+
+	<Section id="how" title={t(lang, 'how.title')} tone="teal" ghostReverse>
+		<Fragment slot="scene">
+			<div class="how-block shape-block px-near"></div>
+			<div class="how-ring shape-ring px-back"></div>
+			<div class="how-chase px-run">
+				<div class="how-magnifier"><Mascot name="magnifier" /></div>
+				<div class="how-handheld"><Mascot name="handheld" /></div>
+			</div>
+		</Fragment>
+		<ol class="steps">
+			{t(lang, 'how.items').map((item) => <li class="neo slap">{item}</li>)}
+		</ol>
+	</Section>
+
+	<Section id="experience" title={t(lang, 'exp.title')}>
+		<Fragment slot="scene">
+			<div class="exp-checker shape-checker px-far"></div>
+			<div class="exp-ring shape-ring px-back"></div>
+			<div class="exp-cloud px-near"><span class="sticker"><Mascot name="cloud" /></span></div>
+		</Fragment>
+		<dl class="facts">
+			{
+				t(lang, 'exp.facts').map((fact) => (
+					<div class="slap">
+						<dd>{fact.value}</dd>
+						<dt>{fact.label}</dt>
+					</div>
+				))
+			}
+		</dl>
+		<ul class="jobs">
+			{
+				t(lang, 'exp.items').map((item) => (
+					<li class="neo slap">
+						<div>
+							<h3>{item.area}</h3>
+							<ul class="chips">
+								{item.stack.map((tool) => <li>{tool}</li>)}
+							</ul>
+						</div>
+						<p class="detail">{item.detail}</p>
+					</li>
+				))
+			}
+		</ul>
+		<div class="edu">
+			<div class="edu-main on-color slap">
+				<p class="tag">{t(lang, 'edu.label')}</p>
+				<h3>{t(lang, 'edu.degree')}</h3>
+				<p class="edu-school">
+					<strong>{t(lang, 'edu.school')}</strong>
+					<span class="edu-years">{t(lang, 'edu.years')}</span>
+				</p>
+				<div class="edu-star"><StarBurst /></div>
+			</div>
+			<div class="edu-langs neo slap">
+				<h3>{t(lang, 'edu.languages')}</h3>
+				<ul>
+					{
+						t(lang, 'edu.languageItems').map((item) => (
+							<li>
+								<strong>{item.name}</strong>
+								<span>{item.level}</span>
+							</li>
+						))
+					}
+				</ul>
+			</div>
+		</div>
+	</Section>
+
+	<div class="tape-clip" aria-hidden="true">
+		<div class="tape-wrap tape-wrap-alt">
+			<ul class="tape tape-reverse">
+				{tape.map((item) => <li data-item={item}></li>)}
+			</ul>
+		</div>
+	</div>
+
+	<Section id="contact" title={t(lang, 'contact.title')} tone="wine" ghostReverse>
+		<Fragment slot="scene">
+			<div class="contact-ring shape-ring px-back"></div>
+			<div class="contact-stripes shape-stripes px-far"></div>
+		</Fragment>
+		<div class="contact-body">
+			<p class="lead">{t(lang, 'contact.lead')}</p>
+			<a class="btn mail" href={`mailto:${email}`}>{email}</a>
+			<ul class="links">
+				<li><a class="btn link-btn" href="https://github.com/DavidDevGt" rel="me noopener">GitHub</a></li>
+				<li><a class="btn link-btn" href="https://www.linkedin.com/in/jdavidvl/" rel="me noopener">LinkedIn</a></li>
+				<li class="tag location">{t(lang, 'contact.location')}</li>
+			</ul>
+			<div class="contact-star px-near"><StarBurst /></div>
+		</div>
+		<!-- The whole cast takes a bow, rising from behind the band's bottom edge. -->
+		<div class="cast" aria-hidden="true">
+			<div class="px-rise cast-handheld"><Mascot name="handheld" /></div>
+			<div class="px-rise cast-window"><Mascot /></div>
+			<div class="px-rise cast-server"><Mascot name="server" /></div>
+			<div class="px-rise cast-magnifier"><Mascot name="magnifier" /></div>
+			<div class="px-rise cast-cloud"><Mascot name="cloud" /></div>
+		</div>
+	</Section>
+</BaseLayout>
+
+<style>
+	/* Hero: the headline is the graphic. */
+	.hero {
+		padding-block: clamp(2.5rem, 1rem + 4vw, 5rem) clamp(3rem, 1rem + 5vw, 6rem);
+		/* The hero sinks behind the next band as it leaves, so its layers are clipped to the band. */
+		overflow: clip;
+		view-timeline: --hero block;
+	}
+
+	/* The role runs hollow along the bottom of the hero, on the farthest layer. */
+	.hero-ghost {
+		top: auto;
+		bottom: -2%;
+		margin-top: 0;
+		font-size: clamp(7rem, 19vw, 24rem);
+	}
+
+	.hero-grid {
+		display: grid;
+		gap: var(--space-5);
+		align-items: center;
+	}
+
+	/* Hard-edged sunburst behind the cast. Barely lighter than the band, so the text keeps its contrast. */
+	.rays {
+		top: 50%;
+		left: 62%;
+		width: 240vmax;
+		aspect-ratio: 1;
+		margin: -120vmax 0 0 -120vmax;
+		background: repeating-conic-gradient(var(--rays) 0 9deg, transparent 0 18deg);
+	}
+
+	/* Sits behind the cast, thin and faint, so it reads as scenery and not as a control. */
+	.hero-ring {
+		top: 6%;
+		right: 30%;
+		width: clamp(4rem, 9vw, 9rem);
+		border-width: 3px;
+		opacity: 0.5;
+	}
+
+	.hero-checker {
+		right: 3%;
+		bottom: 18%;
+		width: clamp(4rem, 8vw, 8rem);
+		background-size: 2rem 2rem;
+		--r: 8deg;
+		--tilt: 10deg;
+	}
+
+	.hero-block {
+		top: 12%;
+		right: 9%;
+		width: clamp(2.5rem, 5vw, 5rem);
+		--r: -12deg;
+		--tilt: 25deg;
+		--shape-fill: var(--color-pink);
+	}
+
+	/* Back layers of the bands sit at the edges, away from the running text. */
+	.work-stripes {
+		top: 0;
+		left: -2rem;
+		width: 16rem;
+		height: 9rem;
+	}
+
+	.work-ring {
+		right: -4rem;
+		bottom: 10%;
+		width: clamp(8rem, 20vw, 20rem);
+	}
+
+	.work-server {
+		top: 5.5rem;
+		right: var(--gutter);
+		width: clamp(7rem, 12vw, 11.5rem);
+		--r: 5deg;
+		--tilt: 5deg;
+		--sticker-fill: var(--color-pink);
+	}
+
+	.videos-ring {
+		top: 2rem;
+		right: -3rem;
+		width: clamp(7rem, 16vw, 15rem);
+	}
+
+	.videos-checker {
+		bottom: 8%;
+		left: -2rem;
+		width: 7rem;
+		background-size: 1.75rem 1.75rem;
+	}
+
+	.how-block {
+		bottom: 6%;
+		left: -1.5rem;
+		width: 8rem;
+		--r: 10deg;
+		--tilt: 20deg;
+		--shape-fill: var(--color-pink);
+	}
+
+	.how-ring {
+		top: 3rem;
+		left: 40%;
+		width: 7rem;
+	}
+
+	/* The console runs ahead and the magnifier chases it across the band's free top corner. */
+	.how-chase {
+		top: 3.5rem;
+		right: clamp(6rem, 12vw, 14rem);
+		display: flex;
+		align-items: flex-end;
+		gap: 1.5rem;
+	}
+
+	.how-magnifier {
+		width: clamp(7rem, 11vw, 10rem);
+	}
+
+	.how-handheld {
+		width: clamp(6rem, 10vw, 9rem);
+		rotate: 6deg;
+	}
+
+	.exp-checker {
+		top: 12%;
+		left: -2rem;
+		width: 7rem;
+		background-size: 1.75rem 1.75rem;
+	}
+
+	.exp-ring {
+		right: 30%;
+		bottom: -3rem;
+		width: clamp(7rem, 16vw, 15rem);
+	}
+
+	.exp-cloud {
+		top: 5.5rem;
+		right: var(--gutter);
+		width: clamp(7rem, 12vw, 11rem);
+		--r: -4deg;
+		--tilt: 5deg;
+		--sticker-fill: var(--color-violet);
+	}
+
+	.contact-ring {
+		top: 30%;
+		right: -5rem;
+		width: 16rem;
+	}
+
+	.contact-stripes {
+		top: 3rem;
+		right: 26%;
+		width: 14rem;
+		height: 7rem;
+	}
+
+	/* The first two projects, KurAI.tech and TRAZO, share the row half and half from desktop width.
+	   Below that they stack, so the auto-fit grid never leaves one card alone in a row. */
+	.cards-home {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	@media (min-width: 60rem) {
+		.cards-home {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.cards-home > li:first-child {
+			grid-column: auto;
+		}
+
+		/* An odd last project (GenRuntime) takes the whole row, so the grid never leaves it half empty. */
+		.cards-home > li:last-child:nth-child(odd) {
+			grid-column: 1 / -1;
+		}
+	}
+
+	/* Scenery that would crowd the text on a phone. */
+	@media (max-width: 59.99rem) {
+		.work-server,
+		.work-stripes,
+		.videos-ring,
+		.videos-checker,
+		.how-ring,
+		.exp-ring,
+		.contact-stripes,
+		.hero-ring,
+		.hero-block {
+			display: none;
+		}
+	}
+
+	@media (max-width: 39.99rem) {
+		.how-chase,
+		.exp-cloud,
+		.how-block,
+		.hero-checker,
+		.contact-ring,
+		.cast-magnifier,
+		.cast-cloud {
+			display: none;
+		}
+	}
+
+	/* The cast stands on the band's bottom line, so it cancels the band's padding. */
+	.cast {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: clamp(0.25rem, 2vw, 2rem);
+		margin: var(--space-6) 0 calc(-1 * var(--space-band));
+		overflow: clip;
+		padding-top: 1rem;
+	}
+
+	.cast > div {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+
+	.cast-handheld {
+		flex-grow: 1.3;
+	}
+
+	.cast-window {
+		flex-grow: 1.25;
+	}
+
+	.eyebrow {
+		margin: 0 0 var(--space-5);
+		font-size: 0.875rem;
+		transform: rotate(-2deg);
+	}
+
+	.hero-title {
+		margin: 0;
+		font-size: clamp(3.25rem, 14.5vw, 10.5rem);
+		/* Spanish capitals carry accents: the display face needs this much room between lines. */
+		line-height: 1.18;
+	}
+
+	.line {
+		display: block;
+	}
+
+	/* On a tablet the phone's size would fill the whole screen with the headline and break the marked line in two. */
+	@media (min-width: 40rem) and (max-width: 59.99rem) {
+		.hero-title {
+			font-size: 10.4vw;
+		}
+	}
+
+	.mark {
+		display: inline-block;
+		padding: 0.1em 0.14em 0.03em;
+		border: var(--border-width) solid var(--ink);
+		line-height: 1.1;
+	}
+
+	.mark-ink {
+		background: var(--line);
+		color: var(--color-lemon);
+		transform: rotate(-1.5deg);
+	}
+
+	.mark-white {
+		background: var(--paper);
+		color: var(--line);
+		box-shadow: var(--shadow);
+		transform: rotate(1deg);
+	}
+
+	/* The pitch on a solid slab, so the rays and the hollow role behind it never touch the text. */
+	.hero-lead {
+		max-width: 60ch;
+		margin: var(--space-4) 0 0;
+		padding: var(--space-3) var(--space-4);
+		background: var(--paper);
+		color: var(--on-color);
+		border: var(--border-width) solid var(--line);
+		box-shadow: var(--shadow);
+		font-size: 1.0625rem;
+		font-weight: 500;
+	}
+
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: stretch;
+		gap: var(--space-4);
+		margin: var(--space-4) 0 0;
+	}
+
+	.btn-aqua {
+		--btn-bg: var(--color-aqua);
+	}
+
+	/* The secondary action: same size as the main one, without the fill or the shadow. */
+	.btn-outline {
+		--btn-bg: transparent;
+		color: var(--paper);
+		border-color: var(--paper);
+		box-shadow: none;
+	}
+
+	.btn-outline:hover,
+	.btn-outline:active {
+		--btn-bg: var(--paper);
+		color: var(--on-color);
+		box-shadow: none;
+	}
+
+	/* Mascot with a star sticker and a name badge overlapping it. */
+	/* The star overhangs the top of the art, so this leaves it clear of the buttons above. */
+	.hero-art {
+		position: relative;
+		width: min(100%, 28rem);
+		margin-inline: auto;
+		margin-top: var(--space-6);
+		/* The handheld hangs below the art box: this keeps its feet clear of the tape under the hero. */
+		margin-bottom: var(--space-6);
+	}
+
+	.art-main {
+		position: relative;
+		z-index: 1;
+		width: 90%;
+		margin-inline: auto;
+	}
+
+	.art-server,
+	.art-cloud,
+	.art-handheld,
+	.art-cable {
+		position: absolute;
+	}
+
+	.art-cable {
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		overflow: visible;
+		pointer-events: none;
+	}
+
+	.art-cable path {
+		fill: none;
+		stroke: var(--color-pink);
+		stroke-width: 5px;
+		stroke-linecap: round;
+		vector-effect: non-scaling-stroke;
+	}
+
+	/* Hovering the cloud sends pulses of data along the cable. A dash pattern is measured in screen pixels here,
+	   because of the non-scaling stroke, so moving it by one full period (300px) loops with no seam. */
+	.art-cable .cable-flow {
+		stroke: var(--color-lemon);
+		stroke-dasharray: 60 240;
+		stroke-linecap: butt;
+		opacity: 0;
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		.hero-art:has(.art-cloud:hover) .cable-flow {
+			opacity: 1;
+			animation: cable-pulse 0.7s linear infinite;
+		}
+	}
+
+	@keyframes cable-pulse {
+		to {
+			stroke-dashoffset: -300;
+		}
+	}
+
+	/* Hierarchy: the terminal leads, the handheld is second and stands in front, the server supports it from behind,
+	   and the cloud is the smallest. The top corners hold the star and the cloud, the bottom row holds the server's
+	   feet, the name badge and the handheld, so nothing sits on top of the badge. */
+	.art-server {
+		bottom: 24%;
+		left: -4%;
+		width: 30%;
+		--r: -6deg;
+	}
+
+	.art-cloud {
+		top: -14%;
+		right: -4%;
+		width: 26%;
+	}
+
+	/* On the terminal's parallax layer: on a faster one it would slide over the shoes on taller screens. */
+	.art-handheld {
+		right: 0;
+		bottom: -8%;
+		z-index: 2;
+		width: 38%;
+		--r: 6deg;
+	}
+
+	.art-star {
+		position: absolute;
+		top: -18%;
+		left: 0;
+		z-index: 2;
+		width: 26%;
+		transform: rotate(10deg);
+		--star-fill: var(--color-pink);
+	}
+
+	.badge {
+		position: relative;
+		z-index: 1;
+		display: grid;
+		width: fit-content;
+		margin: var(--space-3) auto 0 4%;
+		padding: 0.5rem 0.9rem;
+		line-height: 1.2;
+		transform: rotate(-2deg);
+	}
+
+	.badge strong {
+		font-family: var(--font-head);
+		font-size: 1.75rem;
+		font-weight: 400;
+		text-transform: uppercase;
+	}
+
+	.badge span {
+		font-family: var(--font-label);
+		font-size: 0.75rem;
+		font-weight: 700;
+		text-transform: uppercase;
+	}
+
+	/* Acid tape across the band seam, the one loud strip on the dark page. Slides with the scroll. */
+	.tape-clip {
+		position: relative;
+		z-index: 2;
+		margin-block: -1.25rem;
+		overflow-x: clip;
+	}
+
+	.tape-wrap {
+		width: 106%;
+		margin-left: -3%;
+		background: var(--color-lemon);
+		border-block: var(--border-width) solid var(--line);
+		box-shadow:
+			0 -4px 0 var(--paper),
+			0 4px 0 var(--paper);
+		overflow: clip;
+		transform: rotate(-1.2deg);
+	}
+
+	.tape {
+		display: flex;
+		width: max-content;
+		gap: 2.5rem;
+		list-style: none;
+		margin: 0;
+		padding: 0.5rem 0;
+		color: var(--line);
+		font-family: var(--font-head);
+		font-size: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+		line-height: 1.2;
+		text-transform: uppercase;
+	}
+
+	.tape li {
+		display: flex;
+		align-items: center;
+		gap: 2.5rem;
+	}
+
+	/* Decorative repeated terms: in a pseudo-element, so they are neither read out nor indexed 50 times. */
+	.tape li::before {
+		content: attr(data-item) / '';
+	}
+
+	.tape li::after {
+		content: '';
+		width: 0.6em;
+		height: 0.6em;
+		background: var(--line);
+		transform: rotate(45deg);
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		@supports (animation-timeline: scroll()) {
+			.tape {
+				animation: tape-slide linear both;
+			}
+
+			/* Separate selector on purpose: the CSS minifier would otherwise merge this into the
+			   shorthand above, which browsers reject. */
+			.tape-wrap .tape {
+				animation-timeline: view();
+			}
+		}
+	}
+
+	.tape-wrap-alt {
+		transform: rotate(1deg);
+	}
+
+	.tape-wrap.tape-wrap-alt {
+		background: var(--color-pink);
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		@supports (animation-timeline: scroll()) {
+			.tape-wrap-alt .tape-reverse {
+				animation-direction: reverse;
+			}
+		}
+	}
+
+	/* How I work: pasted notes with an oversized number hanging off the corner. Always an even grid. */
+	.steps {
+		counter-reset: step;
+		display: grid;
+		gap: 3.5rem var(--space-5);
+		grid-template-columns: minmax(0, 1fr);
+		list-style: none;
+		margin: 4.5rem 0 0;
+		padding: 0;
+	}
+
+	.steps li {
+		counter-increment: step;
+		position: relative;
+		padding: 2.75rem var(--space-4) var(--space-4);
+		font-size: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem);
+		font-weight: 700;
+		line-height: 1.25;
+	}
+
+	.steps li:nth-child(odd) {
+		transform: rotate(-0.8deg);
+		--slap-r: -4deg;
+	}
+
+	.steps li:nth-child(even) {
+		transform: rotate(0.8deg);
+		--slap-r: 4deg;
+	}
+
+	.steps li::before {
+		content: counter(step) / '';
+		position: absolute;
+		top: -2rem;
+		left: var(--space-4);
+		display: grid;
+		place-items: center;
+		width: 4.25rem;
+		height: 4.25rem;
+		background: var(--step-bg, var(--color-aqua));
+		color: var(--on-color);
+		border: var(--border-width) solid var(--ink);
+		box-shadow: var(--shadow-sm);
+		font-family: var(--font-head);
+		font-size: 2.75rem;
+		font-weight: 400;
+		line-height: 1;
+		transform: rotate(-5deg);
+	}
+
+	/* Each note lands later and from lower, so a row arrives as a stagger, not a block. */
+	.steps li:nth-child(1) {
+		--slap-y: 4rem;
+		--slap-end: 28%;
+	}
+
+	.steps li:nth-child(2) {
+		--step-bg: var(--color-lemon);
+		--slap-y: 7rem;
+		--slap-end: 34%;
+	}
+
+	.steps li:nth-child(3) {
+		--step-bg: var(--color-pink);
+		--slap-y: 10rem;
+		--slap-end: 40%;
+	}
+
+	.steps li:nth-child(4) {
+		--step-bg: var(--color-violet);
+		--slap-y: 13rem;
+		--slap-end: 46%;
+	}
+
+	/* Experience: three headline facts over a ledger of areas, so the proof is the work and not a list of jobs. */
+	.facts {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+		gap: var(--space-4);
+		margin: var(--space-5) 0 0;
+	}
+
+	.facts > div {
+		padding: var(--space-3) var(--space-4);
+		background: var(--color-lemon);
+		color: var(--on-color);
+		border: var(--border-width) solid var(--ink);
+		box-shadow: var(--shadow);
+	}
+
+	.facts > div:nth-child(2) {
+		background: var(--color-aqua);
+	}
+
+	.facts > div:nth-child(3) {
+		background: var(--color-pink);
+	}
+
+	.facts dd {
+		margin: 0;
+		font-family: var(--font-head);
+		font-size: clamp(2.5rem, 2rem + 2.5vw, 4.5rem);
+		line-height: 1.1;
+		text-transform: uppercase;
+	}
+
+	.facts dt {
+		font-family: var(--font-label);
+		font-size: 0.8125rem;
+		font-weight: 700;
+		text-transform: uppercase;
+	}
+
+	.chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.35rem;
+		list-style: none;
+		margin: var(--space-3) 0 0;
+		padding: 0;
+		font-family: var(--font-label);
+		font-size: 0.75rem;
+		font-weight: 700;
+	}
+
+	.chips li {
+		padding: 0.05rem 0.4rem;
+		border: 2px solid var(--ink);
+	}
+
+	/* Education closes the band: the degree on a colored slab, big enough to read from a distance. */
+	.edu {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-5) var(--space-4);
+		margin-top: var(--space-5);
+	}
+
+	.edu h3,
+	.edu p {
+		margin: 0;
+	}
+
+	.edu-main {
+		--cast: var(--color-lemon);
+		position: relative;
+		padding: clamp(1.25rem, 3vw, 2.5rem);
+		background: var(--color-violet);
+		color: var(--on-color);
+		border: var(--border-width) solid var(--ink);
+		box-shadow: var(--shadow);
+		--slap-x: -7vw;
+		--slap-r: -1.5deg;
+	}
+
+	.edu-main h3 {
+		margin-top: var(--space-3);
+		max-width: 18ch;
+		font-size: clamp(2.25rem, 1.5rem + 3.5vw, 5rem);
+		overflow-wrap: break-word;
+	}
+
+	.edu .edu-school {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2) var(--space-3);
+		margin-top: var(--space-4);
+		font-size: clamp(1.125rem, 1rem + 0.5vw, 1.5rem);
+	}
+
+	.edu-school strong {
+		font-weight: 800;
+	}
+
+	.edu-years {
+		padding: 0.05rem 0.5rem;
+		border: 3px solid var(--line);
+		font-family: var(--font-label);
+		font-size: 0.875rem;
+		font-weight: 700;
+	}
+
+	/* The sticker needs the free corner, so narrower screens go without it. */
+	.edu-star {
+		display: none;
+		position: absolute;
+		top: -2.5rem;
+		right: -1.5rem;
+		width: clamp(6rem, 10vw, 9rem);
+		pointer-events: none;
+		--star-fill: var(--color-lemon);
+	}
+
+	.edu-langs {
+		padding: var(--space-4);
+		--slap-x: 7vw;
+		--slap-r: 1.5deg;
+	}
+
+	.edu-langs h3 {
+		font-size: clamp(2rem, 1.5rem + 2vw, 3.25rem);
+	}
+
+	.edu-langs ul {
+		display: grid;
+		gap: var(--space-3);
+		list-style: none;
+		margin: var(--space-3) 0 0;
+		padding: 0;
+	}
+
+	.edu-langs li {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.15rem var(--space-3);
+		padding-bottom: var(--space-2);
+		border-bottom: 2px solid var(--ink);
+		font-size: 1.125rem;
+	}
+
+	.edu-langs li span {
+		font-family: var(--font-label);
+		font-size: 0.875rem;
+		font-weight: 700;
+	}
+
+	@media (min-width: 60rem) {
+		.edu {
+			grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+			align-items: stretch;
+		}
+
+		.edu-star {
+			display: block;
+		}
+
+		/* The card matches the degree's height, so the list spreads out to fill it. */
+		.edu-langs {
+			display: flex;
+			flex-direction: column;
+		}
+
+		.edu-langs ul {
+			flex: 1;
+			align-content: space-evenly;
+		}
+
+		.edu-langs li {
+			font-size: 1.375rem;
+		}
+	}
+
+	.jobs {
+		display: grid;
+		gap: var(--space-4);
+		list-style: none;
+		margin: var(--space-5) 0 0;
+		padding: 0;
+	}
+
+	.jobs > li {
+		display: grid;
+		gap: var(--space-3);
+		padding: var(--space-4);
+		transition:
+			transform 0.12s ease,
+			box-shadow 0.12s ease;
+	}
+
+	.jobs > li:hover {
+		transform: translate(-3px, -3px);
+		box-shadow: var(--shadow-lg);
+	}
+
+	/* The ledger rows slide in from alternating sides. */
+	.jobs > li:nth-child(odd) {
+		--slap-x: -7vw;
+		--slap-y: 1.5rem;
+		--slap-r: -1.5deg;
+	}
+
+	.jobs > li:nth-child(even) {
+		--slap-x: 7vw;
+		--slap-y: 1.5rem;
+		--slap-r: 1.5deg;
+	}
+
+	.jobs p,
+	.jobs h3 {
+		margin: 0;
+	}
+
+	.jobs h3 {
+		font-size: clamp(2rem, 1.5rem + 2vw, 3.25rem);
+	}
+
+	.detail {
+		font-size: 1.125rem;
+		font-weight: 500;
+	}
+
+	@media (min-width: 60rem) {
+		.jobs > li {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			align-items: center;
+			gap: var(--space-5);
+		}
+	}
+
+	/* Contact: the address is the biggest thing on the band. */
+	.contact-body {
+		position: relative;
+		margin-top: var(--space-5);
+	}
+
+	.mail {
+		--btn-bg: var(--color-lemon);
+		display: block;
+		max-width: 100%;
+		margin-top: var(--space-5);
+		padding: 0.15em 0.3em 0.2em;
+		box-shadow: var(--shadow-lg);
+		font-family: var(--font-head);
+		font-size: clamp(1.25rem, 6.6vw, 6.25rem);
+		font-weight: 400;
+		line-height: 1.1;
+		overflow-wrap: anywhere;
+		text-align: center;
+		text-transform: none;
+	}
+
+	.links {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-4);
+		list-style: none;
+		margin: var(--space-5) 0 0;
+		padding: 0;
+	}
+
+	.link-btn {
+		--btn-bg: var(--paper);
+	}
+
+	.mail:hover {
+		--btn-bg: var(--color-aqua);
+		transform: translate(6px, 6px);
+		box-shadow: var(--shadow);
+	}
+
+	.mail:active {
+		transform: translate(12px, 12px);
+	}
+
+	.contact-star {
+		position: absolute;
+		top: -6.5rem;
+		right: 0;
+		width: clamp(6rem, 14vw, 11rem);
+		pointer-events: none;
+		--star-fill: var(--color-violet);
+	}
+
+	@media (min-width: 40rem) {
+		.steps {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (min-width: 60rem) {
+		/*
+		 * Everything to read runs down the left, and the cast stands together on the right.
+		 * The headline scales with the viewport height, so the buttons stay in the first screen.
+		 */
+		.hero-grid {
+			/* About ten times the headline's size on the left: three rows in both languages. */
+			grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
+			gap: var(--space-6);
+		}
+
+		/* The lines flow together to fill the column, which also keeps the buttons in the first screen. */
+		.hero-title {
+			font-size: clamp(3.25rem, min(5.6vw, 12svh), 5.25rem);
+		}
+
+		.line {
+			display: inline-block;
+		}
+
+		.hero-art {
+			width: min(100%, 26rem);
+			margin-top: 0;
+			margin-bottom: 0;
+		}
+
+		/* With a free column around it, the cast can overhang the art box. */
+		.art-server {
+			left: -10%;
+			width: 30%;
+		}
+
+		.art-cloud {
+			right: -8%;
+		}
+
+		.art-star {
+			top: -12%;
+			left: -14%;
+		}
+
+		.art-handheld {
+			right: -4%;
+			bottom: -8%;
+			width: 38%;
+		}
+	}
+
+	@media (min-width: 80rem) {
+		.steps {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+		}
+	}
+
+	/*
+	 * The hero's exit: as the page moves on, the headline shears apart line by line and the
+	 * whole stage sinks at a slower speed, so the next band slides over it like a sheet.
+	 */
+	@keyframes hero-sink {
+		to {
+			translate: 0 var(--sink, 30%);
+		}
+	}
+
+	@keyframes hero-shear {
+		to {
+			translate: var(--shear, -14vw) 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		@supports (animation-timeline: view()) {
+			.hero-copy,
+			.hero-side {
+				animation: hero-sink linear both;
+			}
+
+			.hero-side {
+				--sink: 12%;
+			}
+
+			.line {
+				animation: hero-shear linear both;
+			}
+
+			.line:nth-child(even) {
+				--shear: 5vw;
+			}
+
+			/* Separate selector on purpose: the CSS minifier would otherwise merge this into the
+			   shorthand above, which browsers reject. */
+			.hero .hero-copy,
+			.hero .hero-side,
+			.hero .line {
+				animation-timeline: --hero;
+				animation-range: exit 0% exit 100%;
+			}
+		}
+	}
+</style>

@@ -1,0 +1,74 @@
+---
+import Arrow from '../components/Arrow.astro';
+import Mascot from '../components/Mascot.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { defaultLang } from '../i18n/paths';
+import { t } from '../i18n/ui';
+---
+
+<BaseLayout lang={defaultLang} title={t(defaultLang, 'notfound.title')} description={t(defaultLang, 'notfound.text')} noindex>
+	<section class="not-found tone-teal dots">
+		<div class="container grid">
+			<div>
+				<p class="code" aria-hidden="true">404</p>
+				<h1>{t(defaultLang, 'notfound.title')}</h1>
+				<p class="lead">{t(defaultLang, 'notfound.text')}</p>
+				<p class="action">
+					<a class="btn" href={`/${defaultLang}/`}>
+						<Arrow direction="left" />
+						{t(defaultLang, 'notfound.back')}
+					</a>
+				</p>
+			</div>
+			<div class="art"><Mascot name="handheld" /></div>
+		</div>
+	</section>
+</BaseLayout>
+
+<style>
+	.not-found {
+		padding-block: var(--space-band);
+	}
+
+	.grid {
+		display: grid;
+		gap: var(--space-5);
+		align-items: center;
+	}
+
+	.code {
+		margin: 0;
+		font-family: var(--font-head);
+		font-size: clamp(8rem, 30vw, 22rem);
+		line-height: 1;
+	}
+
+	h1 {
+		margin: var(--space-3) 0 0;
+		font-size: clamp(2.5rem, 1.5rem + 4vw, 5rem);
+	}
+
+	.lead {
+		margin-top: var(--space-3);
+	}
+
+	.action {
+		margin: var(--space-5) 0 0;
+	}
+
+	.art {
+		width: min(70%, 22rem);
+		margin-inline: auto;
+		transform: rotate(8deg);
+	}
+
+	@media (min-width: 60rem) {
+		.grid {
+			grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+		}
+
+		.art {
+			width: 100%;
+		}
+	}
+</style>

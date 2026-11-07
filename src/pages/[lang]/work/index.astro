@@ -1,0 +1,110 @@
+---
+import { getCollection } from 'astro:content';
+import CaseStudyCard from '../../../components/CaseStudyCard.astro';
+import StarBurst from '../../../components/StarBurst.astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { locales } from '../../../i18n/paths';
+import { t } from '../../../i18n/ui';
+
+export function getStaticPaths() {
+	return locales.map((lang) => ({ params: { lang } }));
+}
+
+const { lang } = Astro.params;
+
+const cases = (await getCollection('caseStudies', (e) => e.data.lang === lang && !e.data.draft)).sort(
+	(a, b) => a.data.order - b.data.order,
+);
+---
+
+<BaseLayout lang={lang} title={`${t(lang, 'work.title')} · ${t(lang, 'site.name')}`} description={t(lang, 'work.lead')}>
+	<section class="intro band tone-teal dots">
+		<div class="scene" aria-hidden="true">
+			<div class="ghost px-far" data-word={t(lang, 'work.title')}></div>
+		</div>
+		<div class="container intro-inner">
+			<h1>{t(lang, 'work.title')}</h1>
+			<p class="lead">{t(lang, 'work.lead')}</p>
+			<div class="intro-star px-near"><StarBurst /></div>
+		</div>
+	</section>
+
+	<section class="listing dots">
+		<div class="container">
+			{
+				cases.length === 0 ? (
+					<p>{t(lang, 'work.empty')}</p>
+				) : (
+					<ul class="cards cards-work">
+						{cases.map((entry, index) => (
+							<li>
+								<CaseStudyCard entry={entry} lang={lang} headingLevel={2} lead={index < 2} />
+							</li>
+						))}
+					</ul>
+				)
+			}
+		</div>
+	</section>
+</BaseLayout>
+
+<style>
+	.intro {
+		border-top: 0;
+		--star-fill: var(--color-pink);
+	}
+
+	.intro-inner {
+		position: relative;
+	}
+
+	h1 {
+		margin: 0 0 var(--space-4);
+		max-width: 11ch;
+		font-size: clamp(4rem, 2rem + 13vw, 13rem);
+		line-height: 1;
+	}
+
+	/* Only with room beside the title: on a phone it would cover the end of the word. */
+	.intro-star {
+		display: none;
+		position: absolute;
+		top: -1rem;
+		right: 0;
+		width: clamp(5.5rem, 16vw, 14rem);
+		pointer-events: none;
+	}
+
+	@media (min-width: 60rem) {
+		.intro-star {
+			display: block;
+		}
+	}
+
+	/* The tilted cards overhang slightly on phones and must not widen the page. */
+	.listing {
+		overflow-x: clip;
+		padding-block: clamp(1rem, 3vw, 3rem) var(--space-band);
+	}
+
+	/* The first two projects, KurAI.tech and TRAZO, share a row half and half. The rest sit three across.
+	   Below desktop width everything stacks, one card per row. */
+	.cards-work {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	@media (min-width: 60rem) {
+		.cards-work {
+			grid-template-columns: repeat(12, minmax(0, 1fr));
+		}
+
+		.cards-work > li {
+			grid-column: span 4;
+		}
+
+		.cards-work > li:first-child,
+		.cards-work > li:nth-child(2) {
+			grid-column: span 6;
+		}
+	}
+</style>

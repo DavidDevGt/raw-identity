@@ -1,0 +1,490 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import Architecture from '../../../components/Architecture.astro';
+import GenRuntimeDiagrams from '../../../components/diagrams/GenRuntimeDiagrams.astro';
+import Arrow from '../../../components/Arrow.astro';
+import PipelineShot from '../../../components/PipelineShot.astro';
+import ProjectShot from '../../../components/ProjectShot.astro';
+import StarBurst from '../../../components/StarBurst.astro';
+import VideoCard from '../../../components/VideoCard.astro';
+import { projectVideos } from '../../../data/videos';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { t } from '../../../i18n/ui';
+
+export async function getStaticPaths() {
+	const entries = await getCollection('caseStudies', (e) => !e.data.draft);
+	return entries.map((entry) => ({
+		params: { lang: entry.data.lang, slug: entry.id.split('/').at(-1) },
+		props: { entry },
+	}));
+}
+
+interface Props {
+	entry: CollectionEntry<'caseStudies'>;
+}
+
+const { entry } = Astro.props;
+const { lang, title, summary, year, stack, link, shots, wideShots, pipeline, seen, challenge, approach, tradeoffs, architecture } = entry.data;
+const host = link && new URL(link).host;
+const slug = entry.id.split('/').at(-1) ?? '';
+const clips = projectVideos[slug] ?? [];
+const isReel = clips.length > 2;
+// Bespoke diagrams for a project whose design is the story. Only the projects listed here get one.
+const diagrams: Record<string, typeof GenRuntimeDiagrams> = { genruntime: GenRuntimeDiagrams };
+const Diagrams = diagrams[slug];
+const { Content } = await render(entry);
+const hasBody = Boolean(entry.body?.trim());
+---
+
+<BaseLayout
+	lang={lang}
+	title={`${title} · ${t(lang, 'work.title')} · ${t(lang, 'site.name')}`}
+	description={summary}
+	structured={[
+		{
+			'@type': 'CreativeWork',
+			name: title,
+			description: summary,
+			inLanguage: lang,
+			url: new URL(Astro.url.pathname, Astro.site).href,
+			author: { '@type': 'Person', name: t(lang, 'site.name') },
+			...(year && { dateCreated: String(year) }),
+			keywords: stack.join(', '),
+		},
+	]}
+>
+	<article class="case">
+		<header class="case-head band tone-violet dots">
+			<div class="scene" aria-hidden="true">
+				<div class="ghost px-far" data-word={title}></div>
+			</div>
+			<div class="container head-inner">
+				<div class="head-star px-near"><StarBurst /></div>
+				<p class="back">
+					<a class="btn btn-sm" href={getRelativeLocaleUrl(lang, 'work')}>
+						<Arrow direction="left" />
+						{t(lang, 'work.back')}
+					</a>
+				</p>
+				<h1>{title}</h1>
+				<p class="lead">{summary}</p>
+				<ul class="meta">
+					{year && <li class="tag">{year}</li>}
+					{stack.map((item) => <li class="tag">{item}</li>)}
+					{!link && <li class="tag">{t(lang, 'work.noDemo')}</li>}
+				</ul>
+				{
+					link && (
+						<p class="visit">
+							<a class="btn" href={link} target="_blank" rel="noopener">
+								{t(lang, 'work.live')}
+								<Arrow />
+							</a>
+						</p>
+					)
+				}
+			</div>
+		</header>
+
+		<div class="container body">
+			{
+				(seen || shots.length > 0) && (
+					<section class="block" aria-labelledby="seen-title">
+						<h2 id="seen-title" class="label-title label-title--sm">
+							{t(lang, 'case.seen')}
+						</h2>
+						{seen && <p class="seen">{seen}</p>}
+						{clips.length > 0 && (
+							<div id="clips" class="clips">
+								{isReel && (
+									<>
+										<h3 class="clips-title">{t(lang, 'case.clips')}</h3>
+										<p class="seen">{t(lang, 'case.clipsLead')}</p>
+									</>
+								)}
+								<div class:list={['case-videos', { 'case-videos--pair': clips.length === 2, 'case-videos--reel': isReel }]}>
+									{clips.map((clip) => (
+										<div class:list={['case-video', `case-video--${clip.layout}`]}>
+											<VideoCard video={clip} lang={lang} />
+										</div>
+									))}
+								</div>
+							</div>
+						)}
+						<div class:list={['shots', 'on-color', { wide: wideShots }]}>
+							{shots.map((shot, index) => (
+								<div class="slap">
+									<ProjectShot
+										src={shot.src}
+										alt={shot.alt}
+										host={index === 0 ? host : undefined}
+										caption={shot.caption}
+										sizes={wideShots ? '(min-width: 60rem) 78rem, 90vw' : '(min-width: 60rem) 46rem, 90vw'}
+									/>
+								</div>
+							))}
+						</div>
+					</section>
+				)
+			}
+
+			{
+				pipeline.length > 0 && (
+					<section class="block" aria-labelledby="flow-title">
+						<h2 id="flow-title" class="label-title label-title--sm">
+							{t(lang, 'case.flow')}
+						</h2>
+						<div class="flow slap">
+							<PipelineShot steps={pipeline} />
+						</div>
+					</section>
+				)
+			}
+
+			{
+				architecture && (
+					<section class="block" aria-labelledby="architecture-title">
+						<h2 id="architecture-title" class="label-title label-title--sm">
+							{t(lang, 'case.architecture')}
+						</h2>
+						<Architecture architecture={architecture} />
+					</section>
+				)
+			}
+
+			{Diagrams && <Diagrams lang={lang} />}
+
+			{
+				(challenge || approach.length > 0) && (
+					<section class="block story">
+						{challenge && (
+							<div class="neo">
+								<h2>{t(lang, 'case.challenge')}</h2>
+								<p>{challenge}</p>
+							</div>
+						)}
+						{approach.length > 0 && (
+							<div class="neo approach">
+								<h2>{t(lang, 'case.approach')}</h2>
+								<ul>
+									{approach.map((item) => <li>{item}</li>)}
+								</ul>
+							</div>
+						)}
+						{tradeoffs.length > 0 && (
+							<div class="neo wide">
+								<h2>{t(lang, 'case.tradeoffs')}</h2>
+								<ul>
+									{tradeoffs.map((item) => <li>{item}</li>)}
+								</ul>
+							</div>
+						)}
+					</section>
+				)
+			}
+
+			{
+				hasBody && (
+					<div class="prose">
+						<Content />
+					</div>
+				)
+			}
+		</div>
+	</article>
+</BaseLayout>
+
+<style>
+	.case-head {
+		border-top: 0;
+		--star-fill: var(--color-lemon);
+	}
+
+	.head-inner {
+		position: relative;
+	}
+
+	/* The sticker needs the free corner, so phones go without it. */
+	.head-star {
+		display: none;
+		position: absolute;
+		top: -1rem;
+		right: 0;
+		width: clamp(8rem, 15vw, 14rem);
+		pointer-events: none;
+	}
+
+	@media (min-width: 60rem) {
+		.head-star {
+			display: block;
+		}
+	}
+
+	.btn-sm {
+		--btn-bg: var(--paper);
+		padding: 0.45rem 0.8rem;
+		font-size: 0.875rem;
+	}
+
+	.back {
+		margin: 0;
+	}
+
+	h1 {
+		max-width: 18ch;
+		margin: var(--space-5) 0 0;
+		font-size: clamp(3rem, 1.5rem + 7vw, 8.5rem);
+	}
+
+	.case-head .lead {
+		margin-top: var(--space-4);
+	}
+
+	.meta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		list-style: none;
+		margin: var(--space-4) 0 0;
+		padding: 0;
+	}
+
+	.visit {
+		margin: var(--space-5) 0 0;
+	}
+
+	.body {
+		padding-bottom: var(--space-band);
+	}
+
+	.block {
+		margin-top: var(--space-band);
+	}
+
+	.seen {
+		max-width: 65ch;
+		margin: var(--space-4) 0 0;
+		font-size: 1.1875rem;
+		font-weight: 500;
+	}
+
+	/* Two vertical clips sit side by side from tablet width, each at its own size; one clip takes the full width. */
+	.case-videos {
+		display: grid;
+		gap: var(--space-5);
+		grid-template-columns: minmax(0, 1fr);
+		align-items: start;
+	}
+
+	@media (min-width: 40rem) {
+		.case-videos--pair {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	/* Capped width keeps the vertical clips shorter on the page; the 2:3 crop inside stays the same. */
+	/* Clears the header when a link lands here. */
+	.clips {
+		scroll-margin-top: 6rem;
+	}
+
+	.clips-title {
+		margin: var(--space-5) 0 var(--space-2);
+		font-size: clamp(1.75rem, 1.25rem + 2vw, 2.75rem);
+	}
+
+	/* A whole collection: the film across the top, then the landscape pair, then the vertical clips. */
+	.case-videos--reel .case-video {
+		max-width: none;
+		margin-top: 0;
+	}
+
+	.case-videos--reel {
+		margin-top: var(--space-4);
+	}
+
+	.case-videos--reel .case-video:nth-child(2) {
+		--video-bg: var(--color-aqua);
+		--video-cast: var(--color-violet);
+	}
+
+	.case-videos--reel .case-video:nth-child(3) {
+		--video-bg: var(--color-pink);
+		--video-cast: var(--color-aqua);
+	}
+
+	.case-videos--reel .case-video:nth-child(4) {
+		--video-bg: var(--color-violet);
+		--video-cast: var(--color-lemon);
+	}
+
+	.case-videos--reel .case-video:nth-child(5) {
+		--video-bg: var(--color-lemon);
+		--video-cast: var(--color-aqua);
+	}
+
+	.case-videos--reel .case-video:nth-child(6) {
+		--video-bg: var(--color-aqua);
+		--video-cast: var(--color-pink);
+	}
+
+	@media (min-width: 40rem) {
+		.case-videos--reel {
+			grid-template-columns: repeat(12, minmax(0, 1fr));
+		}
+
+		.case-video--feature {
+			grid-column: span 12;
+		}
+
+		.case-video--wide {
+			grid-column: span 6;
+		}
+
+		/* Three across would be too narrow for the player's controls, so the third one sits centered below. */
+		.case-video--tall {
+			grid-column: span 6;
+		}
+
+		.case-video--tall:last-child {
+			grid-column: 4 / span 6;
+		}
+	}
+
+	@media (min-width: 60rem) {
+		.case-video--tall,
+		.case-video--tall:last-child {
+			grid-column: span 4;
+		}
+	}
+
+	.case-video {
+		width: 100%;
+		max-width: 26rem;
+		margin-inline: auto;
+		margin-top: var(--space-5);
+		--video-bg: var(--color-lemon);
+		--video-cast: var(--color-pink);
+	}
+
+	/* The screenshots are dark like the page, so a colored stage is what makes them stand out. */
+	.shots {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-5);
+		margin-top: var(--space-5);
+		padding: clamp(1.25rem, 4vw, 3.5rem) clamp(1rem, 4vw, 3.5rem) clamp(2.25rem, 5vw, 4.5rem);
+		background: var(--color-violet);
+		border: var(--border-width) solid var(--ink);
+		box-shadow: var(--shadow);
+		overflow-x: clip;
+	}
+
+	.shots > :only-child {
+		width: 100%;
+		max-width: 46rem;
+		margin-inline: auto;
+	}
+
+	/* Three shots read as a walkthrough: the first on the left, then the second and third going down the right.
+	   Two sit side by side. */
+	@media (min-width: 60rem) {
+		.shots:not(.wide):has(> :nth-child(2):last-child) {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			align-items: center;
+		}
+
+		.shots:not(.wide):has(> :nth-child(3)) {
+			grid-template-columns: repeat(12, minmax(0, 1fr));
+			gap: 0 var(--space-4);
+		}
+
+		.shots:not(.wide):has(> :nth-child(3)) > :nth-child(1) {
+			grid-column: 1 / 6;
+			grid-row: 1 / 3;
+			align-self: center;
+			transform: rotate(-1.5deg);
+			--slap-x: -4vw;
+			--slap-r: -5deg;
+		}
+
+		.shots:not(.wide):has(> :nth-child(3)) > :nth-child(2) {
+			grid-column: 7 / 13;
+			grid-row: 1;
+			transform: rotate(0.6deg);
+			--slap-x: 4vw;
+			--slap-r: 3deg;
+		}
+
+		.shots:not(.wide) > :nth-child(3) {
+			grid-column: 6 / 13;
+			grid-row: 2;
+			margin-top: var(--space-5);
+			transform: rotate(-0.6deg);
+			--slap-y: 5rem;
+			--slap-r: -3deg;
+			--slap-end: 40%;
+		}
+	}
+
+	.flow {
+		margin-top: var(--space-5);
+	}
+
+	.story {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-5);
+	}
+
+	.story > div {
+		padding: var(--space-4);
+	}
+
+	/* How it was built is what a reader came for, so it is the one colored block. */
+	.story > .approach {
+		background: var(--color-pink);
+		color: var(--on-color);
+	}
+
+	.story h2 {
+		margin: 0;
+		font-size: clamp(1.75rem, 1.25rem + 2vw, 2.5rem);
+	}
+
+	.story p,
+	.story ul {
+		margin: var(--space-3) 0 0;
+		font-size: 1.125rem;
+		font-weight: 500;
+	}
+
+	.story ul {
+		display: grid;
+		gap: var(--space-2);
+		padding-left: 1.25rem;
+	}
+
+	@media (min-width: 60rem) {
+		.story {
+			grid-template-columns: 1fr 1fr;
+		}
+
+		.story > .wide {
+			grid-column: 1 / -1;
+		}
+	}
+
+	/* Links alone on a list row are touch targets, unlike a link inside a sentence. */
+	.prose :global(li > a:only-child) {
+		display: inline-block;
+		padding-block: 0.25rem;
+	}
+
+	.prose {
+		max-width: 65ch;
+		margin-top: var(--space-band);
+		font-size: 1.1875rem;
+	}
+</style>

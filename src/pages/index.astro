@@ -1,0 +1,8 @@
+---
+import { defaultLang } from '../i18n/paths';
+
+// Every page lives under a language prefix, so the bare root sends visitors to the default language.
+// The build is static, so this becomes an HTML redirect at dist/index.html. A host-level 301 would be stronger.
+// 301 on purpose: for a 302, Astro makes that static page wait 2 seconds before redirecting.
+return Astro.redirect(`/${defaultLang}/`, 301);
+---
