@@ -368,6 +368,11 @@ const hasBody = Boolean(entry.body?.trim());
 		--video-cast: var(--color-pink);
 	}
 
+	/* The film lays its player and title side by side, so it needs the full width even when it is the only clip. */
+	.case-video--feature {
+		max-width: none;
+	}
+
 	/* The screenshots are dark like the page, so a colored stage is what makes them stand out. */
 	.shots {
 		display: grid;
