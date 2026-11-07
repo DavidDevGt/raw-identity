@@ -80,6 +80,37 @@ Las variables se leen en build time porque el sitio es estático. Cambiarlas exi
 
 `pnpm build` genera un sitio estático en `dist/`, que sirve en cualquier hosting. `public/_headers` y `public/_redirects` los leen Cloudflare y Netlify; en otro proveedor, configura allí las mismas cabeceras y la redirección de `/`.
 
+### Cloudflare Pages
+
+En el panel: **Workers & Pages → Create → Pages → Connect to Git** y elige este repositorio.
+
+| Ajuste | Valor |
+| --- | --- |
+| Production branch | `main` |
+| Framework preset | `Astro` |
+| Build command | `pnpm build` |
+| Build output directory | `dist` |
+| Root directory | `/` |
+
+Variables de entorno (Settings → Variables and Secrets, en Production y en Preview):
+
+| Variable | Valor | Para qué |
+| --- | --- | --- |
+| `NODE_VERSION` | `24` | Cloudflare también lee `.nvmrc`; la variable lo fija sin ambigüedad. |
+| `PNPM_VERSION` | `11.9.0` | Debe coincidir con `packageManager` de `package.json`. |
+| `SITE_URL` | `https://davidwebgt.com` | Canonical, hreflang, sitemap y robots. |
+| `PUBLIC_VITALS_ENDPOINT` | opcional | Beacons de Core Web Vitals. |
+
+Después añade el dominio propio en **Custom domains**. `SITE_URL` debe ser ese dominio, no el `*.pages.dev`.
+
+Notas:
+
+- El sitio es estático: no hace falta adaptador ni `wrangler.toml`. Si añades `wrangler`, un archivo de configuración hace que el panel deje de editar las variables.
+- `public/_headers` pone cabeceras de seguridad y caché, y marca `*.pages.dev` y las previews por rama con `X-Robots-Tag: noindex` para que solo se indexe el dominio propio.
+- `public/_redirects` envía `/` a `/en/`.
+- Límites de Pages: 20 000 archivos por despliegue y 25 MiB por archivo. Hoy son 134 archivos y el mayor pesa 5,9 MiB; si añades videos más grandes, comprímelos o sírvelos desde R2.
+- El CI de GitHub Actions (typecheck, tests, Lighthouse) corre aparte; Cloudflare solo compila y publica.
+
 Antes de desplegar:
 
 - Comprueba que `SITE_URL` sea el dominio donde publicas.

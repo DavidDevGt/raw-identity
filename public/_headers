@@ -1,4 +1,4 @@
-# Read by Cloudflare Pages/Workers and Netlify. Other hosts ignore this file: set the same headers on the server.
+# Read by Cloudflare Pages and Netlify. Other hosts ignore this file: set the same headers on the server.
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
@@ -16,3 +16,9 @@
   Cache-Control: public, max-age=604800
 /og/*
   Cache-Control: public, max-age=86400
+
+# Keep the *.pages.dev URL and per-branch previews out of search results, so only the custom domain is indexed.
+https://:project.pages.dev/*
+  X-Robots-Tag: noindex
+https://:version.:project.pages.dev/*
+  X-Robots-Tag: noindex
