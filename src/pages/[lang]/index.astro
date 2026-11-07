@@ -63,7 +63,7 @@ const structured = [
 		<div class="container hero-grid">
 			<div class="hero-copy">
 				<p class="tag eyebrow">{t(lang, 'hero.eyebrow')}</p>
-				<h1 class="hero-title">
+				<h1 class="hero-title" data-lang={lang}>
 					{
 						t(lang, 'hero.title').map((line) => (
 							<>
@@ -498,6 +498,21 @@ const structured = [
 
 	.line {
 		display: block;
+	}
+
+	/*
+	 * English lines are longer than Spanish ones, so at the phone's size "you can rely on," breaks in two and
+	 * "I build" and "and I" sit alone: seven rows against five. A slightly smaller size and lines that flow
+	 * together (each one still unbroken) bring it to five rows.
+	 */
+	@media (max-width: 39.99rem) {
+		.hero-title[data-lang='en'] {
+			font-size: 12vw;
+		}
+
+		.hero-title[data-lang='en'] .line {
+			display: inline-block;
+		}
 	}
 
 	/* On a tablet the phone's size would fill the whole screen with the headline and break the marked line in two. */
