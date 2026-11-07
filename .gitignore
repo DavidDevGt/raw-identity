@@ -1,0 +1,29 @@
+# build output
+dist/
+# generated types
+.astro/
+
+# dependencies
+node_modules/
+
+# logs
+*.log
+
+# environment variables
+.env
+.env.*
+!.env.example
+
+# lighthouse CI output
+.lighthouseci/
+lighthouse-reports/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# editors: share only the project's recommendations and launch config
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json

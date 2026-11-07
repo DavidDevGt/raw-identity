@@ -1,0 +1,11 @@
+# Store and check out text as LF on every OS, so Windows and CI produce the same diffs.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.webp binary
+*.ico binary
+*.mp4 binary
+
+# Collapse the lockfile in GitHub diffs and leave it out of language stats.
+pnpm-lock.yaml linguist-generated=true
