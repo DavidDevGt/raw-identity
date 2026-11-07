@@ -125,7 +125,7 @@ const es = {
 	'contact.lead': 'Si tienes un proyecto o una vacante y te gustaría conversar, escríbeme. Te leo con gusto.',
 	'contact.location': 'Guatemala · Híbrido o remoto',
 
-	'footer.text': 'Sitio estático construido con Astro.',
+	'footer.text': 'Hecho con Astro',
 
 	'notfound.title': 'Página no encontrada',
 	'notfound.text': 'No encontramos esta página. Puede que se haya movido.',
@@ -252,7 +252,7 @@ const en: typeof es = {
 	'contact.lead': 'If you have a project or an open role and would like to chat, write to me. I would be glad to hear from you.',
 	'contact.location': 'Guatemala · Hybrid or remote',
 
-	'footer.text': 'Static site built with Astro.',
+	'footer.text': 'Built with Astro',
 
 	'notfound.title': 'Page not found',
 	'notfound.text': 'We could not find this page. It may have moved.',
