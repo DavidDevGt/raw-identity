@@ -1,0 +1,110 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+	// Without `src`, the window frames whatever goes in the default slot.
+	src?: ImageMetadata;
+	alt?: string;
+	// Shown in the fake address bar, so it is clear this is the real product and where it lives.
+	host?: string;
+	sizes?: string;
+	// Crops to a fixed 4:3 window, so every card lines up.
+	cover?: boolean;
+	// A sticker pinned to the bottom edge of the window.
+	caption?: string;
+	// Raise it for an image shown large, where compression starts to show.
+	quality?: number;
+}
+
+const { src, alt = '', host, sizes, cover = false, caption, quality = 60 } = Astro.props;
+---
+
+<figure class:list={['shot', { cover }]}>
+	<div class="bar" aria-hidden="true">
+		<span class="dots-row"><i></i><i></i><i></i></span>
+		{host && <span class="host">{host}</span>}
+	</div>
+	{src ? <Image src={src} alt={alt} widths={[480, 800, 1200, 1600]} sizes={sizes} quality={quality} /> : <slot />}
+	{caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+	/* The page ink can be light, but this window is always a black-framed paper object. */
+	.shot {
+		position: relative;
+		margin: 0;
+		background: var(--line);
+		border: 3px solid var(--line);
+		box-shadow: var(--shadow-sm);
+	}
+
+	.bar {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		min-height: 1.75rem;
+		padding: 0.25rem 0.6rem;
+		background: var(--paper);
+		color: var(--line);
+		border-bottom: 3px solid var(--line);
+	}
+
+	.dots-row {
+		display: inline-flex;
+		flex: none;
+		gap: 0.25rem;
+	}
+
+	.dots-row i {
+		width: 0.6rem;
+		height: 0.6rem;
+		background: var(--color-pink);
+		border: 2px solid var(--line);
+	}
+
+	.dots-row i:nth-child(2) {
+		background: var(--color-lemon);
+	}
+
+	.dots-row i:nth-child(3) {
+		background: var(--color-aqua);
+	}
+
+	.host {
+		overflow: hidden;
+		font-family: var(--font-label);
+		font-size: 0.75rem;
+		font-weight: 700;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	img {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+
+	.cover img {
+		aspect-ratio: 4 / 3;
+		object-fit: cover;
+	}
+
+	figcaption {
+		position: absolute;
+		bottom: -0.9rem;
+		left: 0.75rem;
+		z-index: 1;
+		max-width: calc(100% - 1.5rem);
+		padding: 0.2rem 0.6rem;
+		background: var(--color-lemon);
+		color: var(--line);
+		border: 3px solid var(--line);
+		font-family: var(--font-label);
+		font-size: 0.8125rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		rotate: -1.5deg;
+	}
+</style>

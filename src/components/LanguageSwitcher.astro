@@ -1,0 +1,92 @@
+---
+import { locales, swapLangInPath, type Lang } from '../i18n/paths';
+import { t } from '../i18n/ui';
+
+interface Props {
+	lang: Lang;
+}
+
+const { lang } = Astro.props;
+
+const labels: Record<Lang, string> = { es: 'Español', en: 'English' };
+// The 404 exists once, not per language, so from there the switcher goes to the other language's home.
+const isNotFound = /[/]404([.]html)?[/]?$/.test(Astro.url.pathname);
+// Links keep the current route in the other language. The client router swaps the page without
+// reloading it, and updates <html lang> as part of the swap.
+---
+
+<nav aria-label={t(lang, 'lang.label')} class="lang-switcher">
+	<ul>
+		{
+			locales.map((code) => (
+				<li>
+					{code === lang ? (
+						<span lang={code} aria-current="true">
+							{labels[code]}
+						</span>
+					) : (
+						<a href={isNotFound ? `/${code}/` : swapLangInPath(Astro.url.pathname, code)} hreflang={code} lang={code}>
+							{labels[code]}
+						</a>
+					)}
+				</li>
+			))
+		}
+	</ul>
+</nav>
+
+<script>
+	import type { TransitionBeforePreparationEvent } from 'astro:transitions/client';
+
+	// The router scrolls to the top on every navigation. Changing language is the same page, so stay put.
+	let keepScroll: number | null = null;
+
+	document.addEventListener('astro:before-preparation', (event) => {
+		const { sourceElement } = event as TransitionBeforePreparationEvent;
+		keepScroll = sourceElement?.closest('.lang-switcher') ? window.scrollY : null;
+	});
+
+	document.addEventListener('astro:after-swap', () => {
+		if (keepScroll === null) return;
+		window.scrollTo({ top: keepScroll, behavior: 'instant' });
+		keepScroll = null;
+	});
+</script>
+
+<style>
+	/* A single segmented block: the two options share one border. */
+	ul {
+		display: flex;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		border: 3px solid var(--ink);
+		box-shadow: var(--shadow-sm);
+		font-size: 0.8125rem;
+	}
+
+	a,
+	span {
+		display: inline-block;
+		padding: 0.3rem 0.6rem;
+		font-weight: 800;
+		text-transform: uppercase;
+	}
+
+	a {
+		background: var(--color-surface);
+		color: var(--color-fg);
+		text-decoration: none;
+	}
+
+	a:hover {
+		background: var(--color-lemon);
+		color: var(--on-color);
+	}
+
+	/* Current language is the inverted block: ink background, background-colored text. */
+	span {
+		background: var(--ink);
+		color: var(--color-bg);
+	}
+</style>

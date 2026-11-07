@@ -1,0 +1,627 @@
+---
+import type { Lang } from '../../i18n/paths';
+
+interface Props {
+	lang: Lang;
+}
+
+const { lang } = Astro.props;
+
+// Real text, not images: screen readers and search get the same content as the picture.
+const copy = {
+	es: {
+		title: 'Cómo está armado',
+		map: {
+			title: 'Mapa del sistema',
+			lead: 'Tres entornos, cada uno con su propio stack. El host decide qué hacer y los contenedores hacen el trabajo de GPU.',
+			host: { name: 'Host', items: ['studio: núcleo del pipeline', 'lab: runner experimental', 'Interfaz de grafo', 'Estado en disco'] },
+			app: { name: 'Contenedor app', items: ['FLUX.2: keyframes', 'QA de video con OWLv2 y DINOv2', 'Pruebas sin GPU'] },
+			video: { name: 'Contenedor ltx25-dfr', items: ['LTX-2.5 DFR', 'Código de Lightricks, sin modificar'] },
+			link: { keyframes: 'keyframes y QA', takes: 'takes de video' },
+			services: [
+				['Ollama', 'Modelo de visión (VLM) para preguntas sobre un frame'],
+				['Whisper', 'Transcribe el diálogo para verificarlo'],
+				['GPU', 'Una sola de 16 GB, un trabajo a la vez'],
+			],
+		},
+		flow: {
+			title: 'Un plano, de punta a punta',
+			lead: 'Cada etapa deja una salida que se puede revisar. La puerta de aprobación es la única que espera a una persona.',
+			steps: [
+				{ name: 'Spec JSON', text: 'Describe personajes, escenario, acción, cámara y diálogo.' },
+				{ name: 'Linter', text: 'Bloquea fallas conocidas antes de usar la GPU.' },
+				{ name: 'Keyframes', text: 'FLUX.2 genera candidatos y los filtra por conteo de personajes, invariantes, localización y cámara.' },
+				{ name: 'Puerta humana', text: 'Se detiene en review.png hasta que alguien aprueba. La aprobación depende del hash de la spec.', gate: true },
+				{ name: 'Take de video', text: 'LTX-2.5 DFR renderiza video y audio en su propio contenedor.' },
+				{ name: 'QA', text: 'Revisa contenido, cámara, parecido con los keyframes (DINOv2) y el diálogo (Whisper).' },
+				{ name: 'Entrega', text: 'output/<nombre>.mp4 y su reporte, solo si el take pasó todos los chequeos.', done: true },
+			],
+			retry: 'Si el QA falla, se reintenta con otra seed (+1000), hasta tres intentos por defecto.',
+		},
+		triage: {
+			title: 'Qué hacer con cada falla',
+			lead: 'El runner experimental no reintenta todo igual. Cada tipo de falla tiene una acción distinta.',
+			rows: [
+				{ tag: 'PASS', text: 'Entrega el clip.' },
+				{ tag: 'QA_SUSPECT', text: 'Revisa el mismo take en tres frames vecinos antes de decidir.' },
+				{ tag: 'STOCHASTIC', text: 'La falla parece aleatoria: prueba otra seed.' },
+				{ tag: 'INFRA', text: 'Es del entorno, no del plano: reintenta la misma seed una vez.' },
+				{ tag: 'STRUCTURAL', text: 'El problema está en la spec: aborta y corrígela.' },
+			],
+		},
+		disk: {
+			title: 'Lo que queda en disco',
+			lead: 'El avance vive en carpetas, no en la memoria. Repetir run continúa donde quedó, y si cambia la spec se borra solo lo que dependía de ella.',
+			root: 'output/studio/<nombre>/',
+			items: [
+				['spec.json', 'La versión vigente del plano'],
+				['keyframes', 'Candidatos, con el elegido marcado'],
+				['review.png', 'Lo que la persona revisa antes del video'],
+				['APPROVED', 'Hash de la spec aprobada; no vale para otra versión'],
+				['takes', 'Cada intento con su seed y su registro'],
+			],
+			out: 'output/<nombre>.mp4 + _report.json',
+			outNote: 'Solo aparece si el take pasó todo el QA.',
+		},
+	},
+	en: {
+		title: 'How it is built',
+		map: {
+			title: 'System map',
+			lead: 'Three environments, each with its own stack. The host decides what to do and the containers do the GPU work.',
+			host: { name: 'Host', items: ['studio: the pipeline core', 'lab: experimental runner', 'Graph interface', 'State on disk'] },
+			app: { name: 'App container', items: ['FLUX.2: keyframes', 'Video QA with OWLv2 and DINOv2', 'Tests that run without GPU'] },
+			video: { name: 'ltx25-dfr container', items: ['LTX-2.5 DFR', 'Lightricks code, unmodified'] },
+			link: { keyframes: 'keyframes and QA', takes: 'video takes' },
+			services: [
+				['Ollama', 'Vision model (VLM) for questions about a frame'],
+				['Whisper', 'Transcribes the dialogue to verify it'],
+				['GPU', 'One card with 16 GB, one GPU job at a time'],
+			],
+		},
+		flow: {
+			title: 'One shot, end to end',
+			lead: 'Every stage leaves an output you can review. The approval gate is the only one that waits for a person.',
+			steps: [
+				{ name: 'JSON spec', text: 'Describes characters, set, action, camera and dialogue.' },
+				{ name: 'Linter', text: 'Blocks known failures before the GPU is used.' },
+				{ name: 'Keyframes', text: 'FLUX.2 generates candidates and filters them by character count, invariants, location and camera.' },
+				{ name: 'Human gate', text: 'Stops at review.png until someone approves. Approval depends on the spec hash.', gate: true },
+				{ name: 'Video take', text: 'LTX-2.5 DFR renders video and audio in its own container.' },
+				{ name: 'QA', text: 'Checks content, camera, likeness to the keyframes (DINOv2) and the dialogue (Whisper).' },
+				{ name: 'Delivery', text: 'output/<name>.mp4 and its report, only if the take passed every check.', done: true },
+			],
+			retry: 'If QA fails, it retries with another seed (+1000), up to three attempts by default.',
+		},
+		triage: {
+			title: 'What to do with each failure',
+			lead: 'The experimental runner does not retry everything the same way. Each kind of failure has its own action.',
+			rows: [
+				{ tag: 'PASS', text: 'Delivers the clip.' },
+				{ tag: 'QA_SUSPECT', text: 'Reviews the same take across three neighboring frames before deciding.' },
+				{ tag: 'STOCHASTIC', text: 'The failure looks random: tries another seed.' },
+				{ tag: 'INFRA', text: 'It comes from the environment, not the shot: retries the same seed once.' },
+				{ tag: 'STRUCTURAL', text: 'The problem is in the spec: aborts so it can be fixed.' },
+			],
+		},
+		disk: {
+			title: 'What stays on disk',
+			lead: 'Progress lives in folders, not in memory. Running it again picks up where it stopped, and if the spec changes only what depended on it is cleared.',
+			root: 'output/studio/<name>/',
+			items: [
+				['spec.json', 'The current version of the shot'],
+				['keyframes', 'Candidates, with the chosen one marked'],
+				['review.png', 'What the person checks before the video'],
+				['APPROVED', 'Hash of the approved spec; it is not valid for any other version'],
+				['takes', 'Each attempt with its seed and its record'],
+			],
+			out: 'output/<name>.mp4 + _report.json',
+			outNote: 'Only appears if the take passed the full QA.',
+		},
+	},
+} as const;
+
+const c = copy[lang];
+---
+
+<section class="diagrams block" aria-labelledby="diagrams-title">
+	<h2 id="diagrams-title" class="label-title label-title--sm">{c.title}</h2>
+
+	<figure class="figure map-figure">
+		<h3>{c.map.title}</h3>
+		<p class="lead">{c.map.lead}</p>
+		<div class="map">
+			<div class="box host">
+				<h4>{c.map.host.name}</h4>
+				<ul>
+					{c.map.host.items.map((item) => <li>{item}</li>)}
+				</ul>
+			</div>
+			<p class="link link-1"><span aria-hidden="true">→</span> docker run · {c.map.link.keyframes}</p>
+			<div class="box app">
+				<h4>{c.map.app.name}</h4>
+				<ul>
+					{c.map.app.items.map((item) => <li>{item}</li>)}
+				</ul>
+			</div>
+			<p class="link link-2"><span aria-hidden="true">→</span> docker run · {c.map.link.takes}</p>
+			<div class="box video">
+				<h4>{c.map.video.name}</h4>
+				<ul>
+					{c.map.video.items.map((item) => <li>{item}</li>)}
+				</ul>
+			</div>
+			<ul class="services">
+				{
+					c.map.services.map(([name, role]) => (
+						<li>
+							<strong>{name}</strong>
+							<span>{role}</span>
+						</li>
+					))
+				}
+			</ul>
+		</div>
+	</figure>
+
+	<figure class="figure flow-figure">
+		<h3>{c.flow.title}</h3>
+		<p class="lead">{c.flow.lead}</p>
+		<ol class="flow">
+			{
+				c.flow.steps.map((step) => (
+					<li class:list={[{ gate: 'gate' in step && step.gate, done: 'done' in step && step.done }]}>
+						<strong>{step.name}</strong>
+						<span>{step.text}</span>
+					</li>
+				))
+			}
+		</ol>
+		<p class="retry">
+			<span aria-hidden="true">↺</span>
+			{c.flow.retry}
+		</p>
+	</figure>
+
+	<figure class="figure triage-figure">
+		<h3>{c.triage.title}</h3>
+		<p class="lead">{c.triage.lead}</p>
+		<ul class="triage">
+			{
+				c.triage.rows.map((row) => (
+					<li>
+						<code>{row.tag}</code>
+						<span>{row.text}</span>
+					</li>
+				))
+			}
+		</ul>
+	</figure>
+
+	<figure class="figure disk-figure">
+		<h3>{c.disk.title}</h3>
+		<p class="lead">{c.disk.lead}</p>
+		<div class="disk">
+			<p class="root"><code>{c.disk.root}</code></p>
+			<ul class="tree">
+				{
+					c.disk.items.map(([name, note]) => (
+						<li>
+							<span class="file">{name}</span>
+							<span class="note">{note}</span>
+						</li>
+					))
+				}
+			</ul>
+			<p class="out">
+				<code>{c.disk.out}</code>
+				<span>{c.disk.outNote}</span>
+			</p>
+		</div>
+	</figure>
+</section>
+
+<style>
+	.diagrams {
+		display: grid;
+		gap: var(--space-band-sm, var(--space-5));
+		margin-top: var(--space-band);
+	}
+
+	/* Every figure is a slab: thick ink border, a hard shadow in its own accent, the same as the cards. */
+	.figure {
+		margin: 0;
+		padding: clamp(1.25rem, 3vw, 2.5rem);
+		background: var(--color-surface);
+		color: var(--paper);
+		border: var(--border-width) solid var(--ink);
+		box-shadow: 10px 10px 0 var(--cast);
+	}
+
+	.map-figure {
+		--cast: var(--color-pink);
+	}
+
+	.flow-figure {
+		--cast: var(--color-aqua);
+	}
+
+	.triage-figure {
+		--cast: var(--color-lemon);
+	}
+
+	.disk-figure {
+		--cast: var(--color-violet);
+	}
+
+	.figure h3 {
+		margin: 0;
+		font-family: var(--font-head);
+		font-size: clamp(2rem, 1.5rem + 2.5vw, 3.75rem);
+		font-weight: 400;
+		line-height: 1.05;
+		text-transform: uppercase;
+	}
+
+	.lead {
+		max-width: 62ch;
+		margin: var(--space-3) 0 0;
+		font-size: 1.125rem;
+		font-weight: 500;
+	}
+
+	/* Room for the step numbers, which hang above each slab. Set on the intro, since the list's own margin is reset. */
+	.flow-figure .lead {
+		margin-bottom: 3.5rem;
+	}
+
+	.triage-figure .lead {
+		margin-bottom: var(--space-5);
+	}
+
+	/* :where keeps this reset at zero specificity, so the layout classes below can set their own margins. */
+	.figure :where(ul, ol) {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	/* Map: host on the left, the two containers on the right, the shared services along the bottom. */
+	.map {
+		display: grid;
+		gap: var(--space-3);
+		margin-top: var(--space-5);
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.box {
+		padding: var(--space-4);
+		background: var(--paper);
+		color: var(--line);
+		border: 3px solid var(--paper);
+		box-shadow: 6px 6px 0 var(--color-violet);
+	}
+
+	.box h4 {
+		margin: 0;
+		font-family: var(--font-head);
+		font-size: clamp(1.75rem, 1.4rem + 1vw, 2.25rem);
+		font-weight: 400;
+		text-transform: uppercase;
+	}
+
+	.box ul {
+		display: grid;
+		gap: 0.35rem;
+		margin-top: var(--space-3);
+		font-family: var(--font-label);
+		font-size: 0.875rem;
+		font-weight: 700;
+	}
+
+	.box li::before {
+		content: '▪ ';
+	}
+
+	.host {
+		background: var(--color-violet);
+	}
+
+	.app {
+		background: var(--color-lemon);
+	}
+
+	.video {
+		background: var(--color-aqua);
+	}
+
+	.link {
+		margin: 0;
+		justify-self: center;
+		padding: 0.35rem 0.6rem;
+		background: var(--line);
+		color: var(--paper);
+		border: 3px solid var(--paper);
+		font-family: var(--font-label);
+		font-size: 0.8125rem;
+		font-weight: 700;
+		text-align: center;
+	}
+
+	.services {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+		gap: var(--space-3);
+	}
+
+	.services li {
+		display: grid;
+		gap: 0.25rem;
+		padding: var(--space-3);
+		background: var(--color-pink);
+		color: var(--line);
+		border: 3px solid var(--paper);
+	}
+
+	.services strong {
+		font-family: var(--font-label);
+		font-size: 1rem;
+	}
+
+	.services span {
+		font-size: 0.9375rem;
+		font-weight: 500;
+	}
+
+	/* Flow: numbered slabs, the gate in pink and the delivered clip in lemon. */
+	.flow {
+		counter-reset: step;
+		display: grid;
+		gap: var(--space-4) var(--space-3);
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.flow li {
+		counter-increment: step;
+		position: relative;
+		display: grid;
+		align-content: start;
+		gap: 0.35rem;
+		padding: 2.5rem var(--space-3) var(--space-3);
+		background: var(--paper);
+		color: var(--line);
+		border: 3px solid var(--paper);
+		box-shadow: 5px 5px 0 var(--line);
+	}
+
+	.flow li::before {
+		content: counter(step);
+		position: absolute;
+		top: -1.1rem;
+		left: var(--space-3);
+		display: grid;
+		place-items: center;
+		width: 2.6rem;
+		height: 2.6rem;
+		background: var(--line);
+		color: var(--paper);
+		border: 3px solid var(--paper);
+		font-family: var(--font-head);
+		font-size: 1.5rem;
+		line-height: 1;
+	}
+
+	.flow strong {
+		font-family: var(--font-head);
+		font-size: 1.5rem;
+		font-weight: 400;
+		text-transform: uppercase;
+	}
+
+	.flow span {
+		font-size: 0.9375rem;
+		font-weight: 500;
+	}
+
+	.flow .gate {
+		background: var(--color-pink);
+	}
+
+	.flow .done {
+		background: var(--color-lemon);
+	}
+
+	.retry {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		margin: var(--space-5) 0 0;
+		padding: var(--space-3) var(--space-4);
+		background: var(--color-aqua);
+		color: var(--line);
+		border: 3px dashed var(--line);
+		font-weight: 700;
+	}
+
+	.retry span {
+		font-size: 1.5rem;
+		line-height: 1;
+	}
+
+	/* Triage: a tag for each kind of failure, the action beside it. */
+	.triage {
+		display: grid;
+		gap: var(--space-3);
+	}
+
+	.triage li {
+		display: grid;
+		gap: var(--space-2);
+		align-items: center;
+		padding: var(--space-3);
+		background: var(--line);
+		border: 3px solid var(--paper);
+		box-shadow: 5px 5px 0 var(--color-lemon);
+	}
+
+	.triage code {
+		justify-self: start;
+		padding: 0.25rem 0.6rem;
+		background: var(--color-aqua);
+		color: var(--line);
+		font-family: var(--font-label);
+		font-size: 0.875rem;
+		font-weight: 700;
+	}
+
+	.triage li:nth-child(2) code {
+		background: var(--color-lemon);
+	}
+
+	.triage li:nth-child(3) code {
+		background: var(--color-violet);
+	}
+
+	.triage li:nth-child(4) code {
+		background: var(--paper);
+	}
+
+	.triage li:nth-child(5) code {
+		background: var(--color-pink);
+	}
+
+	.triage span {
+		font-size: 1.0625rem;
+		font-weight: 500;
+	}
+
+	/* Disk: a terminal-style tree of what each run leaves behind. */
+	.disk {
+		margin-top: var(--space-5);
+		padding: var(--space-4);
+		background: var(--line);
+		border: 3px solid var(--paper);
+		font-family: var(--font-label);
+	}
+
+	.disk code {
+		font-family: var(--font-label);
+		font-weight: 700;
+	}
+
+	.root {
+		margin: 0 0 var(--space-3);
+		color: var(--color-lemon);
+		font-size: 1rem;
+	}
+
+	.tree {
+		display: grid;
+		gap: 0.5rem;
+	}
+
+	.tree li {
+		display: grid;
+		gap: 0.15rem var(--space-3);
+		padding-left: var(--space-3);
+		border-left: 3px solid var(--color-violet);
+	}
+
+	.file {
+		color: var(--paper);
+		font-weight: 700;
+	}
+
+	.note {
+		font-family: inherit;
+		font-size: 0.9375rem;
+		font-weight: 500;
+		color: color-mix(in srgb, var(--paper) 80%, transparent);
+	}
+
+	.out {
+		display: grid;
+		gap: 0.25rem;
+		margin: var(--space-4) 0 0;
+		padding-top: var(--space-3);
+		border-top: 2px dashed var(--paper);
+	}
+
+	.out span {
+		font-family: inherit;
+		font-size: 0.9375rem;
+		font-weight: 500;
+		color: color-mix(in srgb, var(--paper) 80%, transparent);
+	}
+
+	.out code {
+		color: var(--color-lemon);
+	}
+
+	/* Desktop: the map becomes a three-column diagram with the links in the gutter. */
+	@media (min-width: 60rem) {
+		.map {
+			grid-template-columns: minmax(0, 1fr) 10rem minmax(0, 1fr);
+			grid-template-areas:
+				'host link1 app'
+				'host link2 video'
+				'services services services';
+			align-items: stretch;
+		}
+
+		.host {
+			grid-area: host;
+		}
+
+		.app {
+			grid-area: app;
+		}
+
+		.video {
+			grid-area: video;
+		}
+
+		.link-1 {
+			grid-area: link1;
+			align-self: center;
+		}
+
+		.link-2 {
+			grid-area: link2;
+			align-self: center;
+		}
+
+		.services {
+			grid-area: services;
+		}
+
+		.flow {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.triage li {
+			grid-template-columns: 13rem minmax(0, 1fr);
+		}
+
+		.disk {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.tree li {
+			grid-template-columns: 9rem minmax(0, 1fr);
+			align-items: baseline;
+		}
+
+		.out {
+			grid-template-columns: auto minmax(0, 1fr);
+			align-items: baseline;
+		}
+	}
+
+	@media (min-width: 80rem) {
+		.flow {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+		}
+	}
+</style>

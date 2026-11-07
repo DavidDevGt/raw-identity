@@ -1,0 +1,223 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import PipelineShot from './PipelineShot.astro';
+
+interface Props {
+	architecture: NonNullable<CollectionEntry<'caseStudies'>['data']['architecture']>;
+}
+
+const { intro, layers, services, profiles, decisions } = Astro.props.architecture;
+---
+
+<p class="intro">{intro}</p>
+
+<!-- Real text, not an image: the diagram stays readable to screen readers and in search. -->
+<div class="system slap">
+	<ol class="layers">
+		{
+			layers.map(({ name, tech, detail }) => (
+				<li>
+					<h3>
+						{name}
+						{tech && <span class="tech">{tech}</span>}
+					</h3>
+					<p>{detail}</p>
+				</li>
+			))
+		}
+	</ol>
+	<ul class="services">
+		{
+			services.map(({ name, role }) => (
+				<li>
+					<strong>{name}</strong>
+					<span>{role}</span>
+				</li>
+			))
+		}
+	</ul>
+</div>
+
+{
+	profiles.map(({ name, note, steps }) => (
+		<div class="profile">
+			<h3>{name}</h3>
+			<p>{note}</p>
+			<div class="slap">
+				<PipelineShot steps={steps} />
+			</div>
+		</div>
+	))
+}
+
+{
+	decisions.length > 0 && (
+		<ul class="decisions">
+			{decisions.map(({ title, text }) => (
+				<li class="neo">
+					<h3>{title}</h3>
+					<p>{text}</p>
+				</li>
+			))}
+		</ul>
+	)
+}
+
+<style>
+	.intro {
+		max-width: 65ch;
+		margin: var(--space-4) 0 0;
+		font-size: 1.1875rem;
+		font-weight: 500;
+	}
+
+	.system {
+		display: grid;
+		/* Without minmax a long unbreakable item widens the track past the screen on a phone. */
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-5);
+		margin-top: var(--space-5);
+		padding: clamp(1.25rem, 4vw, 3rem);
+		background: var(--color-violet);
+		color: var(--line);
+		border: var(--border-width) solid var(--ink);
+		box-shadow: var(--shadow);
+	}
+
+	.layers,
+	.services,
+	.decisions {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.layers {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-5);
+	}
+
+	.layers li {
+		position: relative;
+		padding: var(--space-3) var(--space-4);
+		background: var(--paper);
+		border: 3px solid var(--line);
+		box-shadow: 5px 5px 0 var(--line);
+	}
+
+	/* The arrows sit in the gaps. They are decoration: the ordered list already gives the sequence. */
+	.layers li::after {
+		content: '↓' / '';
+		position: absolute;
+		top: 100%;
+		left: 50%;
+		translate: -50% 0;
+		font-family: var(--font-label);
+		font-size: 1.75rem;
+		font-weight: 700;
+		line-height: 2.5rem;
+	}
+
+	.layers h3 {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2) var(--space-3);
+		margin: 0;
+		font-size: clamp(1.5rem, 1.25rem + 1vw, 2rem);
+	}
+
+	.tech {
+		padding: 0.05rem 0.45rem;
+		background: var(--line);
+		color: var(--paper);
+		font-family: var(--font-label);
+		font-size: 0.8125rem;
+		font-weight: 700;
+	}
+
+	.layers p {
+		margin: var(--space-2) 0 0;
+		font-weight: 500;
+	}
+
+	.services {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr));
+		gap: var(--space-3);
+	}
+
+	.services li {
+		display: grid;
+		align-content: start;
+		gap: var(--space-1);
+		padding: var(--space-3);
+		background: var(--color-lemon);
+		border: 3px solid var(--line);
+		box-shadow: 5px 5px 0 var(--line);
+	}
+
+	.services li:nth-child(2n) {
+		background: var(--color-aqua);
+	}
+
+	.services li:nth-child(3n) {
+		background: var(--color-pink);
+	}
+
+	.services strong {
+		font-family: var(--font-label);
+		font-size: 1.0625rem;
+	}
+
+	.services span {
+		font-size: 0.9375rem;
+		font-weight: 500;
+	}
+
+	.profile {
+		margin-top: var(--space-band);
+	}
+
+	.profile h3,
+	.decisions h3 {
+		margin: 0;
+		font-size: clamp(1.5rem, 1.25rem + 1.2vw, 2.25rem);
+	}
+
+	.profile p {
+		max-width: 65ch;
+		margin: var(--space-2) 0 var(--space-4);
+		font-size: 1.125rem;
+		font-weight: 500;
+	}
+
+	.decisions {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-4);
+		margin-top: var(--space-band);
+	}
+
+	.decisions li {
+		padding: var(--space-4);
+	}
+
+	.decisions p {
+		margin: var(--space-3) 0 0;
+		font-size: 1.0625rem;
+		font-weight: 500;
+	}
+
+	@media (min-width: 60rem) {
+		.decisions {
+			grid-template-columns: 1fr 1fr;
+		}
+
+		/* The first decision is the one the rest depend on, so it takes the whole row. */
+		.decisions li:first-child {
+			grid-column: 1 / -1;
+		}
+	}
+</style>

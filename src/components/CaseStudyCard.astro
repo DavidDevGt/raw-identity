@@ -1,0 +1,324 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import type { CollectionEntry } from 'astro:content';
+import type { Lang } from '../i18n/paths';
+import { t } from '../i18n/ui';
+import Arrow from './Arrow.astro';
+import PipelineShot from './PipelineShot.astro';
+import ProjectShot from './ProjectShot.astro';
+
+interface Props {
+	entry: CollectionEntry<'caseStudies'>;
+	lang: Lang;
+	// Heading level must follow the page outline: h2 on the work list (h1 is the page), h3 under a home section.
+	headingLevel?: 2 | 3;
+	// The first project in a list, whose card takes the whole row.
+	lead?: boolean;
+}
+
+const { entry, lang, headingLevel = 3, lead = false } = Astro.props;
+const slug = entry.id.split('/').at(-1);
+const href = getRelativeLocaleUrl(lang, `work/${slug}`);
+const { title, summary, year, stack, link, shots, pipeline, highlights, cover: coverImage, coverAlt } = entry.data;
+const cover = shots[0] && { src: coverImage ?? shots[0].src, alt: coverAlt ?? shots[0].alt };
+---
+
+<article class:list={['card', { 'card--lead': lead }]}>
+	<div class="inner on-color">
+		<div class="main">
+			<p class="top">
+				<span class="num"></span>
+				{year && <span class="tag">{year}</span>}
+			</p>
+			{
+				headingLevel === 2 ? (
+					<h2 class="title">
+						<a href={href}>{title}</a>
+					</h2>
+				) : (
+					<h3 class="title">
+						<a href={href}>{title}</a>
+					</h3>
+				)
+			}
+			<p class="summary">{summary}</p>
+			{
+				highlights.length > 0 && (
+					<dl class="highlights">
+						{highlights.map(({ value, label }) => (
+							<div>
+								<dd>{value}</dd>
+								<dt>{label}</dt>
+							</div>
+						))}
+					</dl>
+				)
+			}
+		</div>
+
+		<div class="side">
+			{
+				cover ? (
+					<ProjectShot
+						src={cover.src}
+						alt={cover.alt}
+						host={link && new URL(link).host}
+						sizes={lead ? '(min-width: 48rem) 40rem, 100vw' : '(min-width: 48rem) 30rem, 100vw'}
+						quality={lead ? 85 : 60}
+						cover
+					/>
+				) : (
+					pipeline.length > 0 && <PipelineShot steps={pipeline} cover />
+				)
+			}
+			<ul class="stack">
+				{stack.map((item) => <li>{item}</li>)}
+			</ul>
+			<p class="foot">
+				{
+					link ? (
+						<a class="live" href={link} target="_blank" rel="noopener">
+							{t(lang, 'work.live')}
+							<Arrow />
+						</a>
+					) : (
+						<span class="no-demo">{t(lang, 'work.noDemo')}</span>
+					)
+				}
+				<span class="read">
+					{t(lang, 'work.read')}
+					<Arrow />
+				</span>
+			</p>
+		</div>
+	</div>
+</article>
+
+<style>
+	/* The border and shadow follow the page ink; the content inside is always black on color. */
+	.card {
+		position: relative;
+		height: 100%;
+		background: var(--card-bg, var(--color-surface));
+		color: var(--card-fg, var(--color-fg));
+		border: var(--border-width) solid var(--ink);
+		box-shadow: var(--shadow);
+		transition:
+			transform 0.12s ease,
+			box-shadow 0.12s ease;
+	}
+
+	/* Lifts toward the pointer: the opposite of a button, because the whole poster is the target. */
+	.card:hover {
+		transform: translate(-4px, -4px);
+		box-shadow: var(--shadow-lg);
+	}
+
+	.inner {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+		height: 100%;
+		padding: clamp(1.25rem, 3cqi, 2.5rem);
+	}
+
+	p {
+		margin: 0;
+	}
+
+	.side {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+		margin-top: auto;
+	}
+
+	.top {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-3);
+	}
+
+	/* Poster number from the .cards counter. The alt text is empty so it is not read out. */
+	.num::before {
+		content: counter(case, decimal-leading-zero) / '';
+		font-family: var(--font-head);
+		font-size: clamp(3rem, 12cqi, 5rem);
+		line-height: 1;
+	}
+
+	.title {
+		margin: var(--space-3) 0 0;
+		font-size: clamp(2.25rem, 10cqi, 4.75rem);
+	}
+
+	.title a {
+		color: inherit;
+		font-weight: 400;
+		text-decoration: none;
+	}
+
+	/* The link stretches over the whole card. */
+	.title a::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+	}
+
+	.title a:focus-visible {
+		outline: none;
+	}
+
+	.title a:focus-visible::after {
+		outline: 4px solid var(--line);
+		outline-offset: -10px;
+	}
+
+	.card:hover .title a {
+		text-decoration: underline;
+		text-decoration-thickness: 5px;
+		text-underline-offset: 0.12em;
+		text-decoration-color: var(--line);
+	}
+
+	.summary {
+		margin-top: var(--space-3);
+		max-width: 56ch;
+		font-size: 1.125rem;
+		font-weight: 500;
+	}
+
+	.card--lead .title {
+		font-size: clamp(2.75rem, 10cqi, 6.5rem);
+	}
+
+	.card--lead .summary {
+		font-size: clamp(1.125rem, 1rem + 0.5cqi, 1.375rem);
+	}
+
+	.main {
+		display: flex;
+		flex-direction: column;
+	}
+
+	/* The headline facts sit at the foot of the column, level with the buttons beside them. */
+	.highlights {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+		gap: var(--space-2);
+		margin: auto 0 0;
+		padding-top: var(--space-4);
+	}
+
+	.highlights div {
+		padding: var(--space-3);
+		background: var(--line);
+		color: var(--paper);
+	}
+
+	.highlights dd {
+		margin: 0;
+		font-family: var(--font-head);
+		font-size: clamp(2.25rem, 5cqi, 3.5rem);
+		line-height: 1;
+		white-space: nowrap;
+	}
+
+	.highlights dt {
+		margin-top: var(--space-2);
+		font-family: var(--font-label);
+		font-size: 0.8125rem;
+		font-weight: 700;
+		text-transform: uppercase;
+	}
+
+	.stack {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.35rem;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		font-family: var(--font-label);
+		font-size: 0.75rem;
+		font-weight: 700;
+	}
+
+	.stack li {
+		padding: 0.05rem 0.4rem;
+		border: 2px solid var(--line);
+	}
+
+	.foot {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+	}
+
+	/* Grow to share the row evenly, and drop to one per line only when the card is too narrow for both. */
+	.read,
+	.live {
+		display: inline-flex;
+		flex: 1 1 auto;
+		align-items: center;
+		justify-content: center;
+		gap: 0.4rem;
+		padding: 0.45rem 0.6rem;
+		font-size: 0.875rem;
+		font-weight: 800;
+		text-transform: uppercase;
+		white-space: nowrap;
+	}
+
+	.read {
+		background: var(--line);
+		color: var(--paper);
+	}
+
+	/* Sits above the title's stretched link, so the demo keeps its own click target. */
+	.live {
+		position: relative;
+		z-index: 1;
+		background: var(--paper);
+		color: var(--line);
+		border: 3px solid var(--line);
+		text-decoration: none;
+	}
+
+	.live:hover {
+		background: var(--line);
+		color: var(--paper);
+	}
+
+	.live:focus-visible {
+		outline: 4px solid var(--line);
+		outline-offset: 3px;
+	}
+
+	.no-demo {
+		font-family: var(--font-label);
+		font-size: 0.75rem;
+		font-weight: 700;
+		text-transform: uppercase;
+	}
+
+	/* Wide card: copy on the left, results and call to action in a column on the right. */
+	@container (min-width: 48rem) {
+		.inner {
+			flex-direction: row;
+			gap: var(--space-5);
+		}
+
+		.main {
+			flex: 1;
+		}
+
+		.side {
+			flex: 1;
+			justify-content: flex-end;
+		}
+	}
+</style>

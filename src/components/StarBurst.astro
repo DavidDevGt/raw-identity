@@ -1,0 +1,66 @@
+---
+// Decorative 12-point star, the "quirky" sticker shape from the design system.
+// Decorative only: hidden from assistive tech and never carries meaning.
+//
+// Astro scopes styles per component, so a parent's scoped class does not reach this SVG. To size or
+// place a star, wrap it in an element of the parent. Set --star-fill on that wrapper to recolor it.
+interface Props {
+	label?: string;
+}
+
+const { label } = Astro.props;
+
+// 24 vertices alternating outer (48) and inner (34) radius around the center (50, 50).
+const points = Array.from({ length: 24 }, (_, i) => {
+	const radius = i % 2 === 0 ? 48 : 34;
+	const angle = (Math.PI * i) / 12 - Math.PI / 2;
+	return `${(50 + radius * Math.cos(angle)).toFixed(2)},${(50 + radius * Math.sin(angle)).toFixed(2)}`;
+}).join(' ');
+---
+
+<svg class="starburst" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+	<polygon points={points}></polygon>
+	{label && <text x="50" y="50">{label}</text>}
+</svg>
+
+<style>
+	.starburst {
+		width: 100%;
+		overflow: visible;
+	}
+
+	/* Always dark lines: the fill is what carries the star on a dark band. */
+	polygon {
+		fill: var(--star-fill, var(--color-aqua));
+		stroke: var(--line);
+		stroke-width: 2.5;
+		stroke-linejoin: miter;
+		transform-box: fill-box;
+		transform-origin: center;
+	}
+
+	text {
+		fill: var(--line);
+		font-family: var(--font-head);
+		font-size: 15px;
+		letter-spacing: 0.01em;
+		text-anchor: middle;
+		dominant-baseline: central;
+		text-transform: uppercase;
+	}
+
+	/* The points turn with the scroll; the label stays readable. */
+	@media (prefers-reduced-motion: no-preference) {
+		@supports (animation-timeline: scroll()) {
+			polygon {
+				animation: spin-on-scroll linear both;
+			}
+
+			/* Separate selector on purpose: the CSS minifier would otherwise merge this into the
+			   shorthand above, which browsers reject. */
+			.starburst polygon {
+				animation-timeline: scroll(root);
+			}
+		}
+	}
+</style>

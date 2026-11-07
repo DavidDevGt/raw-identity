@@ -1,0 +1,73 @@
+---
+import { defaultLang, locales, swapLangInPath, type Lang } from '../i18n/paths';
+import { t } from '../i18n/ui';
+
+interface Props {
+	title: string;
+	description: string;
+	lang: Lang;
+	// Pages that must stay out of the index, such as the 404: no canonical and no alternates, which would point at URLs that do not exist.
+	noindex?: boolean;
+	// Structured data for this page, added to the JSON-LD graph.
+	structured?: Record<string, unknown>[];
+}
+
+const { title, description, lang, noindex = false, structured = [] } = Astro.props;
+
+// `site` is set in astro.config.mjs. The fallback only applies to dev without a configured site.
+const origin = Astro.site ?? new URL('http://localhost:4321');
+const canonical = new URL(Astro.url.pathname, origin).href;
+
+// One hreflang per language, plus x-default pointing at the default language.
+const alternates = locales.map((code) => ({
+	lang: code,
+	href: new URL(swapLangInPath(Astro.url.pathname, code), origin).href,
+}));
+const xDefault = new URL(swapLangInPath(Astro.url.pathname, defaultLang), origin).href;
+
+// Open Graph only accepts language_TERRITORY codes.
+const ogLocales: Record<Lang, string> = { es: 'es_LA', en: 'en_US' };
+const siteName = t(lang, 'site.name');
+const image = new URL(`/og/og-${lang}.jpg`, origin).href;
+const imageAlt = `${siteName} · ${t(lang, 'site.role')}`;
+
+const graph = JSON.stringify({ '@context': 'https://schema.org', '@graph': structured }).replaceAll('<', '\\u003c');
+---
+
+<title>{title}</title>
+<meta name="description" content={description} />
+{noindex && <meta name="robots" content="noindex" />}
+{
+	!noindex && (
+		<>
+			<link rel="canonical" href={canonical} />
+			{alternates.map((alt) => (
+				<link rel="alternate" hreflang={alt.lang} href={alt.href} />
+			))}
+			<link rel="alternate" hreflang="x-default" href={xDefault} />
+			<meta property="og:url" content={canonical} />
+		</>
+	)
+}
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content={siteName} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:locale" content={ogLocales[lang]} />
+{
+	locales
+		.filter((code) => code !== lang)
+		.map((code) => <meta property="og:locale:alternate" content={ogLocales[code]} />)
+}
+<meta property="og:image" content={image} />
+<meta property="og:image:type" content="image/jpeg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={imageAlt} />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={image} />
+<meta name="twitter:image:alt" content={imageAlt} />
+<meta name="generator" content={Astro.generator} />
+{structured.length > 0 && <script type="application/ld+json" is:inline set:html={graph} />}

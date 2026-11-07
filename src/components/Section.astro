@@ -1,0 +1,46 @@
+---
+interface Props {
+	id: string;
+	title: string;
+	lead?: string;
+	// Full-bleed deep band. Without it the section sits on the page background with the dot texture.
+	tone?: 'violet' | 'teal' | 'wine';
+	// Slides the hollow title the other way, so neighbouring bands shear against each other.
+	ghostReverse?: boolean;
+}
+
+const { id, title, lead, tone, ghostReverse = false } = Astro.props;
+const titleId = `${id}-title`;
+---
+
+<section id={id} aria-labelledby={titleId} class:list={['section', 'dots', tone ? ['band', `tone-${tone}`] : 'plain']}>
+	<div class="scene" aria-hidden="true">
+		<div class:list={['ghost', 'px-far', { 'ghost--rev': ghostReverse }]} data-word={title}></div>
+		<slot name="scene" />
+	</div>
+	<div class="container">
+		<div class="head">
+			<h2 id={titleId} class="label-title">{title}</h2>
+			{lead && <p class="lead">{lead}</p>}
+		</div>
+		<slot />
+	</div>
+</section>
+
+<style>
+	.section {
+		scroll-margin-top: 5rem;
+	}
+
+	.plain {
+		padding-block: var(--space-band);
+	}
+
+	.head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: var(--space-4) var(--space-5);
+	}
+</style>

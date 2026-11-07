@@ -1,0 +1,1112 @@
+---
+// The cast: original characters built from tech objects, each with limbs made of its own material and its own
+// attitude. Decorative only. Thin limbs and the hard body shadow have their own tokens (--limb, --drop), so they
+// read on dark bands. A .sticker switches them to dark lines.
+interface Props {
+	name?: 'window' | 'server' | 'magnifier' | 'handheld' | 'cloud';
+}
+
+const { name = 'window' } = Astro.props;
+
+// Unique per instance: a reference to an id inside a hidden copy of the same mascot would draw nothing.
+const uid = `${name}-${crypto.randomUUID().slice(0, 8)}`;
+const halftone = `url(#${uid}-dots)`;
+const rough = `url(#${uid}-ink)`;
+
+const viewBoxes = {
+	window: '-10 46 340 274',
+	server: '0 0 340 400',
+	magnifier: '0 0 330 400',
+	handheld: '-36 6 480 324',
+	cloud: '-10 -50 400 400',
+};
+
+// What triggers a character's hover: its body, not the empty corners of its box.
+const hitAreas = {
+	window: { x: 40, y: 56, width: 240, height: 180 },
+	server: { x: 46, y: 24, width: 248, height: 300 },
+	magnifier: { x: 38, y: 8, width: 224, height: 224 },
+	handheld: { x: 8, y: 36, width: 384, height: 284 },
+	cloud: { x: 30, y: 50, width: 300, height: 170 },
+};
+
+// A coiled console cable between two points. The coil tapers at both ends so it lands exactly on them.
+function coil(x1: number, y1: number, x2: number, y2: number, loops = 4, radius = 10) {
+	const length = Math.hypot(x2 - x1, y2 - y1);
+	const [ux, uy] = [(x2 - x1) / length, (y2 - y1) / length];
+	const samples = loops * 12;
+	const points = Array.from({ length: samples + 1 }, (_, i) => {
+		const t = i / samples;
+		const angle = t * loops * 2 * Math.PI;
+		const reach = Math.min(1, 6 * t, 6 * (1 - t)) * radius;
+		const along = t * length + reach * Math.sin(angle);
+		const across = reach * Math.cos(angle);
+		return `${(x1 + ux * along - uy * across).toFixed(1)} ${(y1 + uy * along + ux * across).toFixed(1)}`;
+	});
+	return `M${points.join('L')}`;
+}
+
+// The terminal's mismatched high-tops: the right one is the left one mirrored around the body's center line.
+const shoes = [
+	{ transform: undefined, upper: 'fill-aqua' },
+	{ transform: 'translate(320 0) scale(-1 1)', upper: 'fill-lemon' },
+];
+
+// The gaming PC's fans: three on the radiator, two on the graphics card.
+const fans = [
+	{ x: 104, y: 77, scale: 0.62 },
+	{ x: 170, y: 77, scale: 0.62 },
+	{ x: 236, y: 77, scale: 0.62 },
+];
+const fanBlades = [0, 72, 144, 216, 288];
+
+// The digits in the terminal's visor. Each column repeats every four rows (48 units), which is how far the animation
+// moves it, so the loop has no visible seam. Each column falls at its own speed on hover, and every third one is
+// brighter, like a leading stream.
+const visor = 'M78 108H222L228 118V144L214 162H172L162 148H138L128 162H86L72 144V118Z';
+const rainGlyphs = ['0', '1', '1', '0'];
+const rainColumns = [68, 84, 100, 116, 132, 148, 164, 180, 196, 212, 228].map((x, column) => {
+	const rows = Array.from({ length: 15 }, (_, row) => row);
+	return {
+		xs: rows.map(() => x).join(' '),
+		ys: rows.map((row) => 86 + ((column * 5) % 12) + row * 12).join(' '),
+		glyphs: rows.map((row) => rainGlyphs[(row + column * 3) % rainGlyphs.length]).join(''),
+		bright: column % 3 === 0,
+		speed: column % 4,
+	};
+});
+---
+
+<svg class:list={['mascot', `mascot--${name}`]} viewBox={viewBoxes[name]} aria-hidden="true" focusable="false">
+	<defs>
+		<!-- Comic-print dots for the hard shadows. -->
+		<pattern id={`${uid}-dots`} patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+			<circle class="ink" cx="4" cy="4" r="2.1"></circle>
+		</pattern>
+		<!-- Nudges the outlines a little, so they read as ink and not as vectors. Text stays outside it. -->
+		<filter id={`${uid}-ink`} x="-5%" y="-5%" width="110%" height="110%">
+			<feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="7" result="noise"></feTurbulence>
+			<feDisplacementMap in="SourceGraphic" in2="noise" scale="3.5"></feDisplacementMap>
+		</filter>
+	</defs>
+	{
+		name === 'window' && (
+			<>
+				<!-- Legs: thick coiled cables that disappear into the collars of high-top canvas sneakers. -->
+				<path class="coil" d={coil(104, 236, 100, 284, 5, 9)} />
+				<path class="coil" d={coil(216, 236, 220, 284, 5, 9)} />
+				{shoes.map(({ transform, upper }) => (
+					<g transform={transform}>
+						<!-- Canvas upper with a tall ankle, stitching and laces. -->
+						<path class={`${upper} thin`} d="M84 264H120Q124 264 124 270V298H52V292C52 284 62 281 74 281C82 281 84 276 84 268Z" />
+						<path class="stitch" d="M88 292H120" />
+						<path class="lace-out" d="M82 270H96M82 276H96M76 283H92" />
+						<path class="lace-in" d="M82 270H96M82 276H96M76 283H92" />
+						<!-- Rubber toe cap, ankle patch with its star, and the sole with its racing stripe. -->
+						<path class="paper thin" d="M50 298V292C50 285 56 281 64 281C68 281 70 285 70 291V298Z" />
+						<circle class="paper thin" cx="106" cy="283" r="8" />
+						<path class="ink" d="M106 276.7L107.5 281L112 281.1L108.4 283.8L109.7 288.1L106 285.5L102.3 288.1L103.6 283.8L100 281.1L104.5 281Z" />
+						<rect class="paper thin" x="46" y="296" width="80" height="16" rx="5" />
+						<path class="stripe" d="M52 301H120" />
+					</g>
+				))}
+
+				<!-- Arms: thick coiled cables ending in cartoon gloves (cuff, palm, three fingers and a thumb), hanging from the frame's sides. -->
+				{[
+					{ from: [40, 128], to: [18, 190], transform: 'translate(18 190) rotate(20)' },
+					{ from: [280, 128], to: [302, 190], transform: 'translate(302 190) rotate(-20) scale(-1 1)' },
+				].map(({ from, to, transform }) => (
+					<g class="swing" transform-origin={from.join(' ')}>
+						<path class="coil" d={coil(from[0], from[1], to[0], to[1], 5, 9)} />
+						<g transform={transform}>
+							<path class="hand-out" d="M-10 22V38M0 22V43M10 22V39M14 14L26 27" />
+							<path class="hand-in" d="M-10 22V38M0 22V43M10 22V39M14 14L26 27" />
+							<ellipse class="paper thin" cx="0" cy="17" rx="17" ry="14" />
+							<path class="hand-line" d="M-6 11v8M0 10v9M6 11v8" />
+							<rect class="fill-aqua thin" x="-14" y="-6" width="28" height="14" rx="3" />
+							<path class="hand-line" d="M-6 -2v6M0 -2v6M6 -2v6" />
+						</g>
+					</g>
+				))}
+
+				<!-- A wide console window: a neon frame around a black screen. -->
+				<rect class="drop-accent" x="50" y="66" width="240" height="180" />
+				<rect fill={halftone} x="50" y="66" width="240" height="180" />
+				<g filter={rough}>
+					<rect class="fill-led" x="40" y="56" width="240" height="180" />
+					<rect class="ink" x="50" y="66" width="220" height="160" />
+				</g>
+				<text class="mono-led" x="58" y="84" font-size="15" textLength="122" lengthAdjust="spacingAndGlyphs">david@kurai:~$</text>
+				<rect class="fill-led-flat cursor" x="184" y="71" width="11" height="15" />
+
+				<!-- Confident: a cyberpunk visor with digits on its lenses, and a pixel smirk. -->
+				<g transform="translate(10 0)">
+					<clipPath id={`${uid}-visor`}>
+						<path d={visor} />
+					</clipPath>
+					<path class="ink" d={visor} />
+					<g clip-path={`url(#${uid}-visor)`}>
+						{rainColumns.map(({ xs, ys, glyphs, bright, speed }) => (
+							<text class:list={['rain-text', `rain-speed-${speed}`, { bright }]} x={xs} y={ys} font-size="11">
+								{glyphs}
+							</text>
+						))}
+					</g>
+					<path class="visor-edge" d={visor} />
+					<path class="fill-led-flat" d="M110 190h8v8h52v-8h10v-8h10v8h-10v8h-10v8h-52v-8h-8z" />
+				</g>
+			</>
+		)
+	}
+
+	{
+		name === 'server' && (
+			<>
+				<!-- Legs and arms: sleeved power cables that leave the rack's mounting ears and end in connectors. -->
+				<path class="braid-out" d="M120 318C112 336 130 344 112 362" />
+				<path class="braid-in" d="M120 318C112 336 130 344 112 362" />
+				<path class="braid-weave" d="M120 318C112 336 130 344 112 362" />
+				<path class="braid-out" d="M220 318C228 336 210 344 228 362" />
+				<path class="braid-in" d="M220 318C228 336 210 344 228 362" />
+				<path class="braid-weave" d="M220 318C228 336 210 344 228 362" />
+				<rect class="fill-pink" x="82" y="358" width="60" height="28" />
+				<rect class="fill-pink" x="198" y="358" width="60" height="28" />
+				<path class="ink" d="M90 368h7v7h-7zM102 368h7v7h-7zM114 368h7v7h-7zM126 368h7v7h-7zM206 368h7v7h-7zM218 368h7v7h-7zM230 368h7v7h-7zM242 368h7v7h-7z" />
+
+				<g class="swing" transform-origin="50 150">
+					<path class="braid-out" d="M50 150C14 158 6 206 22 246" />
+					<path class="braid-in" d="M50 150C14 158 6 206 22 246" />
+					<path class="braid-weave" d="M50 150C14 158 6 206 22 246" />
+					<rect class="fill-pink thin" x="4" y="246" width="38" height="26" />
+					<path class="ink" d="M11 256h6v6h-6zM20 256h6v6h-6zM29 256h6v6h-6z" />
+				</g>
+				<g class="swing" transform-origin="290 150">
+					<path class="braid-out" d="M290 150C326 158 334 206 318 246" />
+					<path class="braid-in" d="M290 150C326 158 334 206 318 246" />
+					<path class="braid-weave" d="M290 150C326 158 334 206 318 246" />
+					<rect class="fill-pink thin" x="298" y="246" width="38" height="26" />
+					<path class="ink" d="M305 256h6v6h-6zM314 256h6v6h-6zM323 256h6v6h-6z" />
+				</g>
+
+				<!-- Heat rising out of the vents: the hotter it runs, the more it rises. -->
+				<path class="heat" d="M104 24c-6-5 6-9 0-14M170 24c-6-5 6-9 0-14M236 24c-6-5 6-9 0-14" />
+
+				<!-- The chassis: mounting ears on both sides, then the body with its stacked units. -->
+				<rect class="drop" x="62" y="36" width="216" height="282" />
+				<rect fill={halftone} x="62" y="36" width="216" height="282" />
+				<g filter={rough}>
+					<rect class="fill-steel thin" x="46" y="30" width="16" height="294" />
+					<rect class="fill-steel thin" x="278" y="30" width="16" height="294" />
+					<circle class="ink" cx="54" cy="52" r="3" />
+					<circle class="ink" cx="54" cy="150" r="3" />
+					<circle class="ink" cx="54" cy="300" r="3" />
+					<circle class="ink" cx="286" cy="52" r="3" />
+					<circle class="ink" cx="286" cy="150" r="3" />
+					<circle class="ink" cx="286" cy="300" r="3" />
+
+					<rect class="fill-steel thin" x="62" y="36" width="216" height="282" />
+
+					<!-- Unit 1: the fan grille. -->
+					<rect class="fill-case thin" x="70" y="44" width="200" height="66" />
+
+					<!-- Unit 2: the big front display, with status LEDs on both sides. -->
+					<rect class="fill-case thin" x="70" y="118" width="200" height="110" />
+					<rect class="paper thin" x="96" y="124" width="148" height="98" />
+					<circle class="fill-led thin" cx="82" cy="134" r="4" />
+					<circle class="fill-lemon thin" cx="82" cy="150" r="4" />
+					<circle class="fill-aqua thin" cx="82" cy="166" r="4" />
+					<circle class="fill-led thin" cx="258" cy="134" r="4" />
+					<circle class="fill-lemon thin" cx="258" cy="150" r="4" />
+					<circle class="fill-aqua thin" cx="258" cy="166" r="4" />
+
+					<!-- The face on the display: furrowed brows, glaring eyes, gritted teeth and a cheek flushed red. -->
+					<path class="ink" d="M108 138l42 12-3 9-42-12zM232 138l-42 12 3 9 42-12z" />
+					<ellipse class="ink" cx="136" cy="162" rx="11" ry="12" />
+					<ellipse class="ink" cx="204" cy="162" rx="11" ry="12" />
+					<rect class="paper-fill" x="137" y="157" width="5" height="5" />
+					<rect class="paper-fill" x="205" y="157" width="5" height="5" />
+					<circle class="fill-pink thin" cx="112" cy="198" r="7" />
+					<rect class="ink" x="128" y="184" width="84" height="26" />
+					<rect class="paper-fill" x="132" y="188" width="76" height="18" />
+					<path class="detail" d="M132 197h76M148 188v18M164 188v18M180 188v18M196 188v18" />
+					<path class="fill-aqua thin" d="M226 146c5 7 7 11 7 15a7 7 0 0 1-14 0c0-4 2-8 7-15z" />
+					<path class="fill-pink thin" d="M220 128l5-5 3 3-5 5 5 5-3 3-5-5-5 5-3-3 5-5-5-5 3-3z" />
+
+					<!-- Unit 3: drive bays. -->
+					<rect class="fill-steel thin" x="70" y="236" width="200" height="34" />
+					<rect class="fill-case thin" x="80" y="242" width="36" height="22" />
+					<rect class="fill-case thin" x="122" y="242" width="36" height="22" />
+					<rect class="fill-case thin" x="164" y="242" width="36" height="22" />
+					<rect class="fill-case thin" x="206" y="242" width="36" height="22" />
+					<circle class="fill-led-flat" cx="110" cy="248" r="3" />
+					<circle class="fill-led-flat" cx="152" cy="248" r="3" />
+					<circle class="fill-led-flat" cx="194" cy="248" r="3" />
+					<circle class="fill-led-flat" cx="236" cy="248" r="3" />
+
+					<!-- Unit 4: the load bar, in the acid palette, running from pink to green. -->
+					<rect class="fill-pink-flat" x="70" y="278" width="50" height="10" />
+					<rect class="fill-lemon-flat" x="120" y="278" width="50" height="10" />
+					<rect class="fill-aqua-flat" x="170" y="278" width="50" height="10" />
+					<rect class="fill-led-flat" x="220" y="278" width="50" height="10" />
+				</g>
+
+				<!-- Unit 5: the sticker and the temperature readout, below the chassis filter so the text stays sharp. -->
+				<g transform="rotate(-3 150 304)">
+					<rect class="fill-pink thin" x="76" y="294" width="92" height="22" />
+					<text class="mono" x="122" y="310" font-size="15" text-anchor="middle">Ollama</text>
+					<rect class="ink" x="176" y="294" width="72" height="22" />
+					<text class="mono-led heat-text" x="212" y="310" font-size="14" text-anchor="middle">94°C</text>
+				</g>
+				<circle class="fill-led thin" cx="262" cy="305" r="5" />
+
+				<!-- Outside the rough filter: a filtered group repaints on every frame the fans turn. -->
+				{fans.map(({ x, y, scale }) => (
+					<g transform={`translate(${x} ${y}) scale(${scale})`}>
+						<circle class="ink" r="26" />
+						<circle class="led-ring" r="26" />
+						<g class="fan">
+							{fanBlades.map((angle) => (
+								<path class="blade" transform={`rotate(${angle})`} d="M0-4C10-8 12-18 4-23C-4-20-6-12 0-4Z" />
+							))}
+						</g>
+						<circle class="fill-led hub" r="7" />
+					</g>
+				))}
+			</>
+		)
+	}
+
+	{
+		name === 'magnifier' && (
+			<>
+				<!-- No limbs: a digital object floating on its own, handle and lens as one piece. -->
+				<ellipse class="drop ground" cx="165" cy="382" rx="78" ry="9" />
+
+				<g class="float">
+					<path class="handle-drop" d="M232 202L316 290" />
+					<circle class="drop" cx="160" cy="130" r="112" />
+					<circle fill={halftone} cx="160" cy="130" r="112" />
+					<path class="handle-out" d="M222 192L306 280" />
+					<path class="handle-in" d="M222 192L306 280" />
+					<g transform="rotate(46 281 253)">
+						<text class="mono" x="281" y="259" font-size="18" text-anchor="middle">QA</text>
+					</g>
+					<g filter={rough}>
+						<circle class="fill-aqua" cx="150" cy="120" r="112" />
+						<circle class="paper" cx="150" cy="120" r="84" />
+						<path class="glint" d="M84 110c2-26 18-46 40-54" />
+
+						<!-- The bug hunter: one eye blown up by the lens, the other narrowed in suspicion. -->
+						<circle class="paper thin" cx="116" cy="112" r="30" />
+						<g class="pupil">
+							<ellipse class="ink" cx="120" cy="114" rx="17" ry="20" />
+							<rect class="paper-fill" x="124" y="102" width="7" height="7" />
+						</g>
+						<path class="ink" d="M162 94l42 10-3 10-42-10z" />
+						<ellipse class="ink" cx="184" cy="124" rx="13" ry="9" />
+						<path class="line-sm" d="M112 170c22 12 56 6 78-16" />
+					</g>
+				</g>
+
+				<!-- Sparks of whatever keeps it in the air. -->
+				<path class="fill-lemon thin spark" d="M296 34l5 13 13 5-13 5-5 13-5-13-13-5 13-5zM30 262l4 11 11 4-11 4-4 11-4-11-11-4 11-4z" />
+			</>
+		)
+	}
+
+	{
+		name === 'handheld' && (
+			<>
+				<!-- Legs: coiled console cables in chunky sneakers. -->
+				<path class="coil" d={coil(152, 222, 146, 288)} />
+				<path class="coil" d={coil(248, 222, 254, 288)} />
+				<path class="fill-pink thin" d="M160 284V308H88C88 294 110 292 126 284Z" />
+				<path class="fill-pink thin" d="M240 284V308H312C312 294 290 292 274 284Z" />
+				<rect class="paper thin" x="84" y="306" width="80" height="14" />
+				<rect class="paper thin" x="236" y="306" width="80" height="14" />
+				<path class="detail" d="M130 290l8 8M120 294l8 8M270 290l-8 8M280 294l-8 8" />
+
+				<g class="swing" transform-origin="12 150">
+					<path class="coil" d={coil(12, 150, -6, 224, 5)} />
+					<g class="glove">
+						<ellipse cx="-2" cy="238" rx="21" ry="18" />
+						<path d="M-14 230l-5 18M-2 226l-3 24" />
+					</g>
+				</g>
+
+				<rect class="fill-lemon" x="44" y="36" width="72" height="30" />
+				<rect class="fill-lemon" x="284" y="36" width="72" height="30" />
+
+				<path
+					class="drop"
+					d="M80 60H340C382 60 402 100 402 150 402 200 382 246 340 246L300 232H120L80 246C38 246 18 200 18 150 18 100 38 60 80 60Z"
+				/>
+				<path
+					fill={halftone}
+					d="M80 60H340C382 60 402 100 402 150 402 200 382 246 340 246L300 232H120L80 246C38 246 18 200 18 150 18 100 38 60 80 60Z"
+				/>
+				<g filter={rough}>
+					<path
+						class="fill-purple"
+						d="M70 50H330C372 50 392 90 392 140 392 190 372 236 330 236L290 222H110L70 236C28 236 8 190 8 140 8 90 28 50 70 50Z"
+					/>
+					<rect class="ink" x="110" y="66" width="180" height="132" />
+					<rect class="paper thin" x="124" y="80" width="152" height="104" />
+
+					<g class="vents">
+						<path d="M336 186l34-20M348 198l30-18" />
+					</g>
+					<g class="vents">
+						<path d="M180 210h14M206 210h14" />
+					</g>
+				</g>
+
+				<!-- Outside the rough filter, so a button press doesn't repaint it. -->
+				<path class="ink press press--pad" d="M46 104h20v24h24v20H66v24H46v-24H22v-20h24z" />
+				<circle class="fill-lemon press press--a" cx="350" cy="110" r="17" />
+				<circle class="fill-aqua press press--b" cx="316" cy="146" r="17" />
+
+				<!-- The screen is its own little game: three pixel lives, a wink and a tongue out. -->
+				<path
+					class="fill-pink-flat"
+					d="M132 88h4v-2h4v2h2v-2h4v2h4v6h-2v2h-2v2h-2v2h-4v-2h-2v-2h-2v-2h-2zM156 88h4v-2h4v2h2v-2h4v2h4v6h-2v2h-2v2h-2v2h-4v-2h-2v-2h-2v-2h-2zM180 88h4v-2h4v2h2v-2h4v2h4v6h-2v2h-2v2h-2v2h-4v-2h-2v-2h-2v-2h-2z"
+				/>
+				<path class="line-sm" d="M160 112l24 12-24 12" />
+				<rect class="ink" x="218" y="108" width="22" height="28" />
+				<rect class="paper-fill" x="228" y="112" width="7" height="7" />
+				<circle class="fill-pink thin" cx="146" cy="154" r="8" />
+				<circle class="fill-pink thin" cx="254" cy="154" r="8" />
+				<path class="line-sm" d="M174 150c17 8 35 8 52 0" />
+				<path class="fill-pink thin" d="M196 155h24v14a12 12 0 0 1-24 0z" />
+				<path class="detail" d="M208 158v12" />
+
+				<g class="swing" transform-origin="388 120">
+					<path class="coil" d={coil(388, 120, 414, 60)} />
+					<g class="glove">
+						<ellipse cx="412" cy="44" rx="21" ry="19" />
+						<path d="M398 30l-6-11M412 26V11M426 32l6-11" />
+					</g>
+				</g>
+			</>
+		)
+	}
+
+	{
+		name === 'cloud' && (
+			<>
+				<path
+					class="drop"
+					d="M95 225C50 225 30 175 65 145 55 95 120 70 150 95c25-55 110-45 122 10 48-10 83 40 58 80 0 30-25 40-45 40z"
+				/>
+				<path
+					fill={halftone}
+					d="M95 225C50 225 30 175 65 145 55 95 120 70 150 95c25-55 110-45 122 10 48-10 83 40 58 80 0 30-25 40-45 40z"
+				/>
+				<!-- A small bolt it keeps zapping out of its belly, drawn first so the cloud covers its top. -->
+				<g class="zap">
+					<path class="fill-lemon thin" d="M183 196L137 285H174L150 374L239 255H199L231 196Z" />
+					<path class="detail-lemon" d="M254 276l24-8M258 316l22 8M118 318l-24 10" />
+				</g>
+				<g filter={rough}>
+					<path
+						class="paper"
+						d="M85 215C40 215 20 165 55 135 45 85 110 60 140 85c25-55 110-45 122 10 48-10 83 40 58 80 0 30-25 40-45 40z"
+					/>
+					<path class="detail-aqua" d="M76 196c40 14 180 14 224-4" />
+
+					<!-- Overclocked: spiral eyes, an electric zigzag for a mouth, sparks coming off the head. -->
+					<circle class="fill-pink thin" cx="104" cy="160" r="11" />
+					<circle class="fill-pink thin" cx="268" cy="160" r="11" />
+					<path class="line-sm" d="M140 172l14 10 14-10 14 10 14-10 14 10 14-10" />
+					<path class="line-sm" d="M186 58V42M152 66l-8-14M222 66l10-13" />
+				</g>
+				<!-- Outside the rough filter, so turning them doesn't repaint it. -->
+				<path class="line-sm spiral" transform-origin="152 128" d="M150 128a4 4 0 0 1 8 0a8 8 0 0 1-16 0a12 12 0 0 1 24 0a16 16 0 0 1-32 0a20 20 0 0 1 40 0" />
+				<path class="line-sm spiral" transform-origin="220 128" d="M222 128a4 4 0 0 0-8 0a8 8 0 0 0 16 0a12 12 0 0 0-24 0a16 16 0 0 0 32 0a20 20 0 0 0-40 0" />
+			</>
+		)
+	}
+
+	<rect class="hit" {...hitAreas[name]}></rect>
+</svg>
+
+<style>
+	.mascot {
+		/* Materials only this cast uses: case metal, the dark inside of the case and status LEDs. */
+		--steel: #b7bccb;
+		--case: #171228;
+		--led: #7dff3a;
+
+		width: 100%;
+		overflow: visible;
+		transform-origin: 50% 100%;
+	}
+
+	.ink {
+		fill: var(--line);
+	}
+
+	.drop {
+		fill: var(--drop, var(--cast));
+	}
+
+	.drop-accent {
+		fill: var(--color-pink);
+	}
+
+	.visor-edge {
+		fill: none;
+		stroke: var(--led);
+		stroke-width: 4;
+		stroke-linejoin: round;
+	}
+
+	.rain-text {
+		fill: var(--led);
+		font-family: var(--font-label);
+		font-weight: 700;
+		user-select: none;
+	}
+
+	/* Classes and not a style attribute: the site's CSP blocks inline styles, which would stop the cascade. */
+	.rain-speed-0 {
+		--rain-speed: 1.2s;
+	}
+
+	.rain-speed-1 {
+		--rain-speed: 2s;
+	}
+
+	.rain-speed-2 {
+		--rain-speed: 1.6s;
+	}
+
+	.rain-speed-3 {
+		--rain-speed: 2.4s;
+	}
+
+	.rain-text.bright {
+		fill: var(--paper);
+	}
+
+	.paper,
+	.fill-lemon,
+	.fill-pink,
+	.fill-aqua,
+	.fill-purple,
+	.fill-steel,
+	.fill-case,
+	.fill-led {
+		stroke: var(--line);
+		stroke-width: 7;
+		stroke-linejoin: round;
+	}
+
+	.fill-purple {
+		fill: var(--color-purple);
+	}
+
+	.paper {
+		fill: var(--paper);
+	}
+
+	.fill-lemon {
+		fill: var(--color-lemon);
+	}
+
+	.fill-pink {
+		fill: var(--color-pink);
+	}
+
+	.fill-aqua {
+		fill: var(--color-aqua);
+	}
+
+	.fill-steel {
+		fill: var(--steel);
+	}
+
+	.fill-case {
+		fill: var(--case);
+	}
+
+	.fill-led,
+	.fill-led-flat {
+		fill: var(--led);
+	}
+
+	.fill-lemon-flat {
+		fill: var(--color-lemon);
+	}
+
+	.fill-aqua-flat {
+		fill: var(--color-aqua);
+	}
+
+	.thin {
+		stroke-width: 5;
+	}
+
+	.paper-fill {
+		fill: var(--paper);
+	}
+
+	.fill-pink-flat {
+		fill: var(--color-pink);
+	}
+
+	.line-sm,
+	.detail,
+	.detail-aqua,
+	.vents,
+	.glint,
+	.handle-drop,
+	.handle-out,
+	.handle-in,
+	.coil,
+	.trace,
+	.trace-sm,
+	.braid-out,
+	.braid-in,
+	.braid-weave,
+	.tube-out,
+	.tube-in,
+	.glare,
+	.heat,
+	.glove path {
+		fill: none;
+		stroke-linecap: round;
+	}
+
+	.coil {
+		stroke: var(--limb, var(--paper));
+		stroke-width: 6;
+		stroke-linejoin: round;
+	}
+
+	.trace,
+	.trace-sm {
+		stroke: var(--limb, var(--color-aqua));
+		stroke-width: 10;
+		stroke-linecap: square;
+		stroke-linejoin: miter;
+	}
+
+	.trace-sm {
+		stroke-width: 5;
+	}
+
+	.braid-out,
+	.braid-in,
+	.braid-weave {
+		stroke-linecap: butt;
+	}
+
+	.braid-out {
+		stroke: var(--line);
+		stroke-width: 22;
+	}
+
+	.braid-in {
+		stroke: var(--color-lemon);
+		stroke-width: 14;
+	}
+
+	.braid-weave {
+		stroke: var(--line);
+		stroke-width: 14;
+		stroke-dasharray: 3 9;
+	}
+
+	.tube-out {
+		stroke: var(--line);
+		stroke-width: 13;
+	}
+
+	.tube-in {
+		stroke: var(--color-aqua);
+		stroke-width: 7;
+	}
+
+	.glare {
+		stroke: var(--paper);
+		stroke-width: 5;
+	}
+
+	.heat {
+		stroke: var(--limb, var(--color-lemon));
+		stroke-width: 5;
+	}
+
+	.led-ring {
+		fill: none;
+		stroke: var(--led);
+		stroke-width: 3;
+	}
+
+	.blade {
+		fill: var(--steel);
+	}
+
+	.hub {
+		stroke-width: 4;
+	}
+
+	.line-sm,
+	.detail {
+		stroke: var(--line);
+		stroke-width: 7;
+	}
+
+	.detail {
+		stroke-width: 5;
+	}
+
+	.detail-aqua {
+		stroke: var(--color-aqua);
+		stroke-width: 9;
+	}
+
+	.detail-lemon {
+		fill: none;
+		stroke: var(--color-lemon);
+		stroke-width: 7;
+		stroke-linecap: round;
+	}
+
+	.vents {
+		stroke: var(--line);
+		stroke-width: 6;
+	}
+
+	.glint {
+		stroke: var(--color-violet);
+		stroke-width: 10;
+	}
+
+	.handle-drop {
+		stroke: var(--drop, var(--cast));
+		stroke-width: 38;
+	}
+
+	.handle-out {
+		stroke: var(--line);
+		stroke-width: 38;
+	}
+
+	.handle-in {
+		stroke: var(--color-pink);
+		stroke-width: 26;
+	}
+
+	.glove ellipse {
+		fill: var(--paper);
+		stroke: var(--line);
+		stroke-width: 6;
+	}
+
+	.glove path {
+		stroke: var(--line);
+		stroke-width: 6;
+	}
+
+	/* The terminal's gloves: fingers are an outline stroke with a paper stroke on top, like the braided cables. */
+	.hand-out,
+	.hand-in,
+	.hand-line,
+	.lace-out,
+	.lace-in,
+	.stitch,
+	.stripe {
+		fill: none;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
+	.hand-out {
+		stroke: var(--line);
+		stroke-width: 14;
+	}
+
+	.hand-in {
+		stroke: var(--paper);
+		stroke-width: 8;
+	}
+
+	.hand-line {
+		stroke: var(--line);
+		stroke-width: 3.5;
+	}
+
+	.lace-out {
+		stroke: var(--line);
+		stroke-width: 8;
+	}
+
+	.lace-in {
+		stroke: var(--paper);
+		stroke-width: 4;
+	}
+
+	.stitch {
+		stroke: var(--line);
+		stroke-width: 2.5;
+		stroke-dasharray: 3 4;
+		stroke-linecap: butt;
+	}
+
+	.stripe {
+		stroke: var(--color-pink);
+		stroke-width: 3.5;
+	}
+
+	.mono,
+	.mono-led {
+		font-family: var(--font-label);
+		font-weight: 700;
+		user-select: none;
+	}
+
+	.mono {
+		fill: var(--line);
+	}
+
+	.mono-led {
+		fill: var(--led);
+	}
+
+	.swing {
+		transform-box: view-box;
+	}
+
+	/* A character only reacts to its invisible hit area, which grows while hovered, so one that jumps or shakes
+	   doesn't slip out from under the pointer and restart its animation. */
+	.mascot {
+		pointer-events: none;
+	}
+
+	.hit {
+		fill: transparent;
+		stroke: transparent;
+		stroke-width: 0;
+		pointer-events: all;
+	}
+
+	.mascot:hover .hit {
+		stroke-width: 90;
+	}
+
+	.spiral {
+		transform-box: view-box;
+	}
+
+	.press {
+		transform-box: fill-box;
+		transform-origin: center;
+	}
+
+	/* The limbs jerk in steps as the page scrolls, like hand-drawn frames. */
+	@keyframes limb-swing {
+		from {
+			transform: rotate(-7deg);
+		}
+
+		to {
+			transform: rotate(7deg);
+		}
+	}
+
+	@keyframes fan-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	@keyframes rain-fall {
+		from {
+			transform: translateY(-48px);
+		}
+
+		to {
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes magnify-scan {
+		from {
+			transform: rotate(-7deg);
+		}
+
+		to {
+			transform: rotate(7deg);
+		}
+	}
+
+	@keyframes pupil-search {
+		from {
+			transform: translateX(-9px);
+		}
+
+		to {
+			transform: translateX(11px);
+		}
+	}
+
+	@keyframes ground-counter {
+		from {
+			transform: translateY(5px);
+		}
+
+		to {
+			transform: translateY(-5px);
+		}
+	}
+
+	@keyframes levitate {
+		from {
+			transform: translateY(-5px);
+		}
+
+		to {
+			transform: translateY(5px);
+		}
+	}
+
+	@keyframes zap {
+		0%,
+		30%,
+		50%,
+		100% {
+			opacity: 1;
+		}
+
+		20%,
+		40% {
+			opacity: 0;
+		}
+
+		70% {
+			opacity: 0.25;
+		}
+	}
+
+	@keyframes cursor-blink {
+		50% {
+			opacity: 0;
+		}
+	}
+
+	@keyframes inject-right {
+		to {
+			transform: translate(9px, 9px);
+		}
+	}
+
+	@keyframes inject-left {
+		to {
+			transform: translate(-9px, -9px);
+		}
+	}
+
+	@keyframes overclock-shake {
+		0% {
+			transform: translate(1.5px, -1px);
+		}
+
+		25% {
+			transform: translate(-1.5px, 1px);
+		}
+
+		50% {
+			transform: translate(1px, 1.5px);
+		}
+
+		75% {
+			transform: translate(-1px, -1.5px);
+		}
+
+		100% {
+			transform: translate(1.5px, -1px);
+		}
+	}
+
+	@keyframes critical-fill {
+		50% {
+			fill: #ff1f4b;
+		}
+	}
+
+	@keyframes sway {
+		from {
+			transform: rotate(-1.5deg);
+		}
+
+		to {
+			transform: rotate(1.5deg);
+		}
+	}
+
+	@keyframes arcade-bounce {
+		from {
+			transform: translateY(0) scaleY(0.96);
+		}
+
+		to {
+			transform: translateY(-14px) scaleY(1.02);
+		}
+	}
+
+	@keyframes button-press {
+		0%,
+		55%,
+		100% {
+			transform: scale(1);
+		}
+
+		20% {
+			transform: scale(0.9);
+		}
+	}
+
+	@keyframes hover-bob {
+		from {
+			transform: translateY(-8px);
+		}
+
+		to {
+			transform: translateY(8px);
+		}
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		/* Hovering the terminal starts the cascade. Each frame moves the digits exactly one row. */
+		.mascot--window:hover .rain-text {
+			animation: rain-fall var(--rain-speed) steps(4) infinite;
+		}
+
+		/* The whole character moves as one composited layer, so its rough filter isn't repainted on every frame.
+		   Inner parts tick in steps for the same reason. */
+		.mascot {
+			will-change: transform;
+		}
+
+		.mascot.mascot--window,
+		.mascot.mascot--window:hover {
+			animation: levitate 2.6s ease-in-out infinite alternate;
+		}
+
+		.mascot .cursor {
+			animation: cursor-blink 1.1s steps(1) infinite;
+		}
+
+		.mascot:hover .inject--right {
+			animation: inject-right 0.24s steps(2) infinite alternate;
+		}
+
+		.mascot:hover .inject--left {
+			animation: inject-left 0.24s steps(2) infinite alternate;
+		}
+
+		.mascot.mascot--server:hover {
+			animation: overclock-shake 0.1s linear infinite;
+		}
+
+		.mascot .fan {
+			animation: fan-spin 3s steps(8) infinite;
+		}
+
+		/* Three times the idle speed, with more frames so the blades don't strobe. */
+		.mascot:hover .fan {
+			animation: fan-spin 1s steps(16) infinite;
+		}
+
+		.mascot:hover .heat-bar,
+		.mascot:hover .heat-text {
+			animation: critical-fill 0.5s steps(2) infinite;
+		}
+
+		/* Longer than the terminal's loop and already partway through it, so the two never line up. */
+		.mascot.mascot--cloud,
+		.mascot.mascot--cloud:hover {
+			animation: levitate 3.7s ease-in-out -1.4s infinite alternate;
+		}
+
+		/* Two quick flashes and a pause, like a real discharge. Hovering makes it strike twice as often. */
+		.mascot .zap {
+			animation: zap 2.4s steps(1) infinite;
+		}
+
+		.mascot:hover .zap {
+			animation-duration: 1.2s;
+		}
+
+		.mascot .spiral {
+			animation: fan-spin 14s steps(28) infinite;
+		}
+
+		.mascot:hover .spiral {
+			animation: fan-spin 0.6s linear infinite;
+		}
+
+		.mascot.mascot--handheld {
+			animation: sway 1.8s ease-in-out infinite alternate;
+		}
+
+		.mascot.mascot--handheld:hover {
+			animation: arcade-bounce 0.24s cubic-bezier(0.3, 1.6, 0.6, 1) infinite alternate;
+		}
+
+		/* The lens floats and its shadow moves the other way, so the shadow stays on the ground. */
+		.mascot.mascot--magnifier {
+			transform-origin: 50% 40%;
+			animation: levitate 3.1s ease-in-out -0.8s infinite alternate;
+		}
+
+		.mascot--magnifier .ground {
+			animation: ground-counter 3.1s ease-in-out -0.8s infinite alternate;
+		}
+
+		.mascot--magnifier .spark {
+			animation: cursor-blink 1.7s steps(1) infinite;
+		}
+
+		/* It sweeps from side to side while the big eye darts around, hunting for a bug. */
+		.mascot.mascot--magnifier:hover {
+			animation: magnify-scan 0.7s ease-in-out infinite alternate;
+		}
+
+		.mascot--magnifier:hover .pupil {
+			animation: pupil-search 0.45s steps(3) infinite alternate;
+		}
+
+		/* Different lengths that don't share a beat, so the presses read as a random combo. */
+		.mascot:hover .press--pad {
+			animation: button-press 0.37s steps(1) infinite;
+		}
+
+		.mascot:hover .press--a {
+			animation: button-press 0.53s steps(1) -0.2s infinite;
+		}
+
+		.mascot:hover .press--b {
+			animation: button-press 0.29s steps(1) -0.1s infinite;
+		}
+
+		@supports (animation-timeline: scroll()) {
+			.swing {
+				animation: limb-swing 1s steps(3) 28 alternate both;
+			}
+
+			.float {
+				animation: hover-bob 1s steps(3) 24 alternate both;
+			}
+
+			/* Separate selector on purpose: the CSS minifier would otherwise merge this into the
+			   shorthand above, which browsers reject. */
+			.mascot .swing,
+			.mascot .float {
+				animation-timeline: scroll(root);
+			}
+		}
+	}
+</style>

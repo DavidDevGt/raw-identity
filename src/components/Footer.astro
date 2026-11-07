@@ -1,0 +1,70 @@
+---
+import type { Lang } from '../i18n/paths';
+import { t } from '../i18n/ui';
+
+interface Props {
+	lang: Lang;
+}
+
+const { lang } = Astro.props;
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer tone-ink">
+	<div class="checker"></div>
+	<div class="container">
+		<p class="copy">© {year} {t(lang, 'site.name')}. {t(lang, 'footer.text')}</p>
+	</div>
+	<!-- Decorative wordmark: the name is already in the line above. -->
+	<p class="wordmark" aria-hidden="true">{t(lang, 'site.name')}</p>
+</footer>
+
+<style>
+	.site-footer {
+		overflow: clip;
+	}
+
+	/* Hard-stop checkerboard, the finish-line strip that closes every page. */
+	.checker {
+		height: 2rem;
+		background: repeating-conic-gradient(var(--paper) 0 25%, var(--line) 0 50%) 0 0 / 2rem 2rem;
+		border-bottom: var(--border-width) solid var(--paper);
+	}
+
+	.copy {
+		margin: 0;
+		padding-block: var(--space-4);
+		font-family: var(--font-label);
+		font-size: 0.875rem;
+		font-weight: 700;
+	}
+
+	/* Sized against the viewport so the name runs edge to edge and bleeds off the bottom. */
+	.wordmark {
+		margin: 0 0 -0.09em;
+		color: var(--color-lemon);
+		font-family: var(--font-head);
+		font-size: 16vw;
+		line-height: 1;
+		text-align: center;
+		text-transform: uppercase;
+		white-space: nowrap;
+	}
+
+	/* The name rises from the floor as the page ends. */
+	@media (prefers-reduced-motion: no-preference) {
+		@supports (animation-timeline: view()) {
+			.wordmark {
+				animation: rise linear both;
+				--px-rise: 45%;
+			}
+
+			/* Separate selector on purpose: the CSS minifier would otherwise merge this into the
+			   shorthand above, which browsers reject. */
+			.site-footer .wordmark {
+				animation-timeline: view();
+				animation-range: entry 0% entry 100%;
+			}
+		}
+	}
+</style>

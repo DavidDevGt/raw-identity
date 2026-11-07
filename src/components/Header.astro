@@ -1,0 +1,165 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import type { Lang } from '../i18n/paths';
+import { t } from '../i18n/ui';
+import LanguageSwitcher from './LanguageSwitcher.astro';
+
+interface Props {
+	lang: Lang;
+}
+
+const { lang } = Astro.props;
+
+// Home sections are anchors on the home page; the work list is its own route.
+const workHref = getRelativeLocaleUrl(lang, 'work');
+const links = [
+	{ label: t(lang, 'nav.work'), href: workHref },
+	{ label: t(lang, 'nav.videos'), href: `${getRelativeLocaleUrl(lang)}#videos` },
+	{ label: t(lang, 'nav.how'), href: `${getRelativeLocaleUrl(lang)}#how` },
+	{ label: t(lang, 'nav.experience'), href: `${getRelativeLocaleUrl(lang)}#experience` },
+	{ label: t(lang, 'nav.contact'), href: `${getRelativeLocaleUrl(lang)}#contact` },
+];
+const onWork = Astro.url.pathname.startsWith(workHref.replace(/\/$/, ''));
+---
+
+<header class="site-header">
+	<div class="container bar">
+		<a class="brand" href={getRelativeLocaleUrl(lang)}>{t(lang, 'site.name')}</a>
+		<nav aria-label={t(lang, 'nav.main')} class="main-nav">
+			<ul>
+				{
+					links.map((link) => (
+						<li>
+							<a href={link.href} aria-current={link.href === workHref && onWork ? 'page' : undefined}>
+								{link.label}
+							</a>
+						</li>
+					))
+				}
+			</ul>
+		</nav>
+		<LanguageSwitcher lang={lang} />
+	</div>
+</header>
+
+<style>
+	.site-header {
+		position: relative;
+		z-index: 50;
+		background: var(--line);
+		border-bottom: var(--border-width) solid var(--ink);
+	}
+
+	.bar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+		padding-block: 0.75rem;
+	}
+
+	.brand {
+		padding: 0.1rem 0.6rem 0.15rem;
+		background: var(--color-lemon);
+		color: var(--on-color);
+		border: var(--border-width) solid var(--ink);
+		box-shadow: var(--shadow-sm);
+		font-family: var(--font-head);
+		font-size: 1.5rem;
+		font-weight: 400;
+		letter-spacing: 0.01em;
+		text-decoration: none;
+		text-transform: uppercase;
+		transform: rotate(-2deg);
+		transition: transform 0.1s ease;
+	}
+
+	.brand:hover {
+		transform: rotate(2deg);
+	}
+
+	/* On a phone the nav takes its own rows, with comfortable touch targets. */
+	.main-nav {
+		order: 3;
+		width: 100%;
+	}
+
+	.main-nav ul {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--space-1);
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.main-nav a {
+		display: grid;
+		place-items: center;
+		height: 100%;
+		min-height: 2.75rem;
+		padding: 0.25rem;
+		border: 3px solid transparent;
+		font-size: 0.75rem;
+		font-weight: 800;
+		line-height: 1.1;
+		text-align: center;
+		text-decoration: none;
+		text-transform: uppercase;
+	}
+
+	.main-nav a:hover,
+	.main-nav a[aria-current='page'] {
+		border-color: var(--ink);
+		box-shadow: var(--shadow-sm);
+		background: var(--color-lemon);
+		color: var(--on-color);
+	}
+
+	.main-nav li:last-child {
+		grid-column: 1 / -1;
+	}
+
+	/* Five links in two even rows: three on top, two below, always filling the width. */
+	@media (min-width: 23rem) {
+		.main-nav ul {
+			grid-template-columns: repeat(6, minmax(0, 1fr));
+		}
+
+		.main-nav li {
+			grid-column: span 2;
+		}
+
+		.main-nav li:nth-last-child(-n + 2) {
+			grid-column: span 3;
+		}
+	}
+
+	/* From tablet up: one row, stuck to the top. Needs this much width to hold all five links. */
+	@media (min-width: 60rem) {
+		.site-header {
+			position: sticky;
+			top: 0;
+		}
+
+		.bar {
+			flex-wrap: nowrap;
+		}
+
+		.main-nav {
+			order: 0;
+			width: auto;
+		}
+
+		.main-nav ul {
+			display: flex;
+			gap: var(--space-2);
+		}
+
+		.main-nav a {
+			padding: 0.25rem 0.7rem;
+			font-size: 0.9375rem;
+		}
+	}
+</style>
