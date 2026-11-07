@@ -1,0 +1,636 @@
+/*
+ * Dark neobrutalist design system (documented in README.md, "Sistema de diseño").
+ * Rules: near-black ground, deep saturated bands, acid accents as solid slabs, condensed display type,
+ * thick bone borders, and hard colored shadows with zero blur (a black shadow would vanish on this ground).
+ * Page structure is full-bleed bands. A .tone-* class re-scopes the tokens for everything inside it.
+ */
+:root {
+	color-scheme: dark;
+
+	/* Fixed print colors: violet-black line art and bone paper. */
+	--line: #08060f;
+	--paper: #f5eedc;
+
+	/* Ink is the border and text color. Cast is the color of the hard shadow. */
+	--ink: var(--paper);
+	--cast: var(--color-violet);
+	--color-bg: #0d0a17;
+	--color-surface: #171228;
+	--color-fg: var(--paper);
+	--color-muted: #d8d1e4;
+
+	/* Accent slabs. Text placed on these is always --on-color, with more than 6:1 contrast. */
+	--color-lemon: #e6ff2e;
+	--color-pink: #ff5ca8;
+	--color-aqua: #14e0c0;
+	--color-violet: #a084ff;
+	/* Drawn behind dark line art only: too dark to carry text. */
+	--color-purple: #7a3ff2;
+	--on-color: var(--line);
+
+	--border-width: 4px;
+	--radius: 0;
+
+	--font-body: var(--font-sans), system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--font-head: var(--font-display), Impact, 'Arial Narrow', sans-serif;
+	--font-label: var(--font-mono), ui-monospace, 'Cascadia Mono', monospace;
+
+	--space-1: 0.25rem;
+	--space-2: 0.5rem;
+	--space-3: 1rem;
+	--space-4: 1.5rem;
+	--space-5: 2.5rem;
+	--space-6: 4rem;
+	--space-band: clamp(4rem, 2rem + 7vw, 8rem);
+
+	--max-width: 84rem;
+	--gutter: clamp(1rem, 4vw, 3rem);
+}
+
+/* Deep bands: dark enough to keep bone text above 10:1, saturated enough to read as color. */
+.tone-violet {
+	--color-bg: #1e0f5c;
+	--color-surface: #130939;
+	--cast: var(--color-lemon);
+	--label-bg: var(--color-lemon);
+	--rays: #2a1780;
+}
+
+.tone-teal {
+	--color-bg: #04332f;
+	--color-surface: #02211e;
+	--cast: var(--color-aqua);
+	--label-bg: var(--color-lemon);
+}
+
+.tone-wine {
+	--color-bg: #4a0629;
+	--color-surface: #2e0319;
+	--cast: var(--color-pink);
+	--label-bg: var(--color-aqua);
+}
+
+.tone-ink {
+	--color-bg: var(--line);
+	--color-surface: var(--line);
+	--cast: var(--color-lemon);
+}
+
+/* Dark ink on a light slab: the inside of a colored card or a mascot sticker. */
+.on-color {
+	--ink: var(--line);
+	--cast: var(--line);
+	--color-bg: var(--paper);
+	--color-surface: var(--paper);
+	--color-fg: var(--line);
+	--color-muted: var(--line);
+}
+
+/*
+ * Tokens derived from --ink and --cast. A var() resolves where it is declared, so they must be declared
+ * again on every scope that changes either one, or the shadows and focus ring would keep the root color.
+ */
+:root,
+.tone-violet,
+.tone-teal,
+.tone-wine,
+.tone-ink,
+.on-color,
+.cards > li {
+	--shadow: 8px 8px 0 var(--cast);
+	--shadow-sm: 4px 4px 0 var(--cast);
+	--shadow-lg: 14px 14px 0 var(--cast);
+	--color-focus: var(--ink);
+	--dot-color: color-mix(in srgb, var(--ink) 14%, transparent);
+}
+
+.tone-violet,
+.tone-teal,
+.tone-wine,
+.tone-ink {
+	background-color: var(--color-bg);
+	color: var(--color-fg);
+}
+
+/* A full-bleed section, cut from its neighbours by a bone line. */
+.band {
+	padding-block: var(--space-band);
+	border-block: var(--border-width) solid var(--ink);
+}
+
+/* Halftone texture: hard-edged dots, not a visible gradient. */
+.dots {
+	background-image: radial-gradient(var(--dot-color) 2px, transparent 2.5px);
+	background-size: 22px 22px;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+}
+
+body {
+	margin: 0;
+	background: var(--color-bg);
+	color: var(--color-fg);
+	font-family: var(--font-body);
+	font-size: 1.0625rem;
+	font-weight: 400;
+	line-height: 1.55;
+	-webkit-font-smoothing: antialiased;
+	/* Tape and stickers overhang the edge on purpose; clip them instead of creating a horizontal scrollbar. */
+	overflow-x: clip;
+}
+
+/* The same for the entrance animations: a card that is still rotated and off to one side must not widen the page on a phone, where the browser would let you zoom out to see it. */
+main {
+	overflow-x: clip;
+}
+
+::selection {
+	background: var(--color-lemon);
+	color: var(--on-color);
+}
+
+img,
+svg,
+video {
+	display: block;
+	max-width: 100%;
+	height: auto;
+}
+
+/* The display face has a single weight, so headings stay at 400 to avoid a synthetic bold. */
+h1,
+h2,
+h3 {
+	font-family: var(--font-head);
+	font-weight: 400;
+	line-height: 1.02;
+	letter-spacing: 0.005em;
+	text-transform: uppercase;
+	overflow-wrap: break-word;
+}
+
+p {
+	text-wrap: pretty;
+}
+
+/* Links are ink text with a thick colored underline, so they never rely on a low-contrast color. */
+a {
+	color: var(--color-fg);
+	font-weight: 700;
+	text-decoration: underline;
+	text-decoration-color: var(--color-lemon);
+	text-decoration-thickness: 3px;
+	text-underline-offset: 0.2em;
+}
+
+a:hover {
+	text-decoration-color: var(--ink);
+}
+
+:focus-visible {
+	outline: 4px solid var(--color-focus);
+	outline-offset: 4px;
+}
+
+main:focus-visible {
+	outline: none;
+}
+
+.container {
+	width: min(100% - 2 * var(--gutter), var(--max-width));
+	margin-inline: auto;
+}
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+}
+
+/* Skip link: hidden until focused, then a solid block at the top-left corner. */
+.skip-link {
+	position: absolute;
+	top: var(--space-2);
+	left: var(--space-2);
+	z-index: 100;
+	padding: var(--space-2) var(--space-3);
+	background: var(--color-lemon);
+	color: var(--on-color);
+	border: var(--border-width) solid var(--ink);
+	box-shadow: var(--shadow-sm);
+	font-weight: 800;
+	text-decoration: none;
+	transform: translateY(-200%);
+	transition: transform 0.2s ease;
+}
+
+.skip-link:focus {
+	transform: translateY(0);
+}
+
+/* Shared blocks. Use these instead of re-declaring borders and shadows in components. */
+.neo {
+	background: var(--color-surface);
+	color: var(--color-fg);
+	border: var(--border-width) solid var(--ink);
+	box-shadow: var(--shadow);
+}
+
+/* Small monospaced label for metadata. */
+.tag {
+	display: inline-block;
+	padding: 0.2rem 0.55rem;
+	background: var(--ink);
+	color: var(--color-bg);
+	font-family: var(--font-label);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	line-height: 1.4;
+	text-transform: uppercase;
+}
+
+/* Section title: a tilted slab. Bands choose its color with --label-bg. */
+.label-title {
+	display: inline-block;
+	margin: 0;
+	padding: 0.08em 0.3em 0.1em;
+	background: var(--label-bg, var(--color-pink));
+	color: var(--on-color);
+	border: var(--border-width) solid var(--ink);
+	box-shadow: var(--shadow);
+	font-size: clamp(2.75rem, 1.5rem + 6vw, 6.5rem);
+	transform: rotate(-1.5deg);
+}
+
+.label-title--sm {
+	font-size: clamp(1.75rem, 1.25rem + 2vw, 2.75rem);
+}
+
+.lead {
+	max-width: 52ch;
+	margin: 0;
+	font-size: clamp(1.125rem, 1rem + 0.5vw, 1.375rem);
+	font-weight: 500;
+	line-height: 1.45;
+}
+
+.btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.6rem;
+	padding: 0.85rem 1.3rem;
+	background: var(--btn-bg, var(--color-lemon));
+	color: var(--on-color);
+	border: var(--border-width) solid var(--ink);
+	box-shadow: var(--shadow);
+	font-size: 1.0625rem;
+	font-weight: 800;
+	letter-spacing: 0.01em;
+	text-transform: uppercase;
+	text-decoration: none;
+	transition:
+		transform 0.1s ease,
+		box-shadow 0.1s ease;
+}
+
+/* Press effect: the block sinks onto its own shadow. */
+.btn:hover {
+	transform: translate(4px, 4px);
+	box-shadow: var(--shadow-sm);
+	text-decoration: none;
+}
+
+.btn:active {
+	transform: translate(8px, 8px);
+	box-shadow: none;
+}
+
+/* Case study grid: rotates the palette, numbers the cards and tilts them like pasted posters. */
+.cards {
+	counter-reset: case;
+	display: grid;
+	gap: var(--space-5) var(--space-4);
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+	list-style: none;
+	margin: var(--space-5) 0 0;
+	padding: 0;
+}
+
+.cards > li {
+	counter-increment: case;
+	container-type: inline-size;
+	--card-fg: var(--on-color);
+}
+
+/* The lead project takes the whole row. */
+.cards > li:first-child {
+	grid-column: 1 / -1;
+}
+
+.cards > li:nth-child(odd) {
+	transform: rotate(-0.6deg);
+}
+
+.cards > li:nth-child(even) {
+	transform: rotate(0.6deg);
+}
+
+/* Each slab casts a shadow in a contrasting accent. */
+.cards > li:nth-child(3n + 1) {
+	--card-bg: var(--color-lemon);
+	--cast: var(--color-pink);
+}
+
+.cards > li:nth-child(3n + 2) {
+	--card-bg: var(--color-aqua);
+	--cast: var(--color-violet);
+}
+
+.cards > li:nth-child(3n + 3) {
+	--card-bg: var(--color-violet);
+	--cast: var(--color-lemon);
+}
+
+/*
+ * Parallax stage. A .scene sits behind a band's content and clips what overhangs it. overflow: clip does
+ * not create a scroll container, so view() below still tracks the page.
+ */
+.section,
+.hero,
+.band {
+	position: relative;
+}
+
+/* Slabs that fly in from the side must not widen the page before they land. */
+.section {
+	overflow-x: clip;
+}
+
+.section > .container,
+.hero > .container,
+.band > .container {
+	position: relative;
+	z-index: 1;
+}
+
+.scene {
+	position: absolute;
+	inset: 0;
+	overflow: clip;
+	pointer-events: none;
+}
+
+.scene > * {
+	position: absolute;
+}
+
+/* Flat cut-paper shapes for the back layer. Place them with a class of the page. */
+.shape-ring {
+	aspect-ratio: 1;
+	border: var(--border-width) solid var(--ink);
+	border-radius: 50%;
+}
+
+.shape-block {
+	aspect-ratio: 1;
+	background: var(--shape-fill, var(--color-pink));
+	border: var(--border-width) solid var(--ink);
+	box-shadow: var(--shadow);
+}
+
+.shape-stripes {
+	background: repeating-linear-gradient(-45deg, var(--ink) 0 6px, transparent 0 18px);
+}
+
+.shape-checker {
+	aspect-ratio: 1;
+	background: repeating-conic-gradient(var(--ink) 0 25%, transparent 0 50%) 0 0 / 2.5rem 2.5rem;
+	border: var(--border-width) solid var(--ink);
+}
+
+/*
+ * The word of the band, set huge and hollow as the farthest layer. The text lives in a pseudo-element
+ * through data-word, so it is neither read out nor indexed.
+ */
+.ghost {
+	top: 50%;
+	left: -2vw;
+	margin-top: -0.5em;
+	color: transparent;
+	font-family: var(--font-head);
+	font-size: clamp(9rem, 27vw, 30rem);
+	line-height: 1;
+	text-transform: uppercase;
+	white-space: nowrap;
+	-webkit-text-stroke: 2px var(--ink);
+}
+
+.ghost::before {
+	content: attr(data-word) / '';
+}
+
+/* Square sticker that gives a character a colored ground. Its lines go dark on it. */
+.sticker {
+	display: block;
+	padding: 0.5rem;
+	background: var(--sticker-fill, var(--color-lemon));
+	border: var(--border-width) solid var(--ink);
+	box-shadow: var(--shadow);
+	--limb: var(--line);
+	--drop: var(--line);
+}
+
+/*
+ * Depth, as a fraction of the viewport height travelled while a layer crosses the screen. Normal content
+ * is 0. Negative layers move against the scroll, so they lag behind and read as far away; positive layers
+ * overtake the page and read as close. A layer sits at its resting place when centered on screen.
+ */
+.px-far {
+	--depth: -0.45;
+}
+
+.px-back {
+	--depth: -0.2;
+}
+
+/* Far scenery fades, so the depth reads even in a still frame. Characters keep their full color. */
+[class*='shape-'].px-far {
+	opacity: 0.35;
+}
+
+[class*='shape-'].px-back {
+	opacity: 0.65;
+}
+
+.px-mid {
+	--depth: 0.08;
+}
+
+.px-near {
+	--depth: 0.28;
+}
+
+.px-front {
+	--depth: 0.55;
+}
+
+/* A phone has a tall screen and small art, so the same fraction would throw close layers across each other. */
+@media (max-width: 59.99rem) {
+	.px-near {
+		--depth: 0.14;
+	}
+
+	.px-front {
+		--depth: 0.22;
+	}
+}
+
+/* Sideways travel, for a character that crosses the band. */
+.px-run {
+	--drift: 9rem;
+}
+
+/* Rises from behind its container and stops there. */
+.px-rise {
+	--px-rise: 100%;
+}
+
+.ghost.px-far {
+	opacity: 0.2;
+	--drift: 12vw;
+}
+
+/* Odd sections slide their word the other way, so neighbouring bands shear against each other. */
+.ghost.ghost--rev {
+	--drift: -12vw;
+}
+
+/* The resting tilt lives in --r, so the scroll animation can add to it instead of replacing it. */
+[class*='px-'] {
+	rotate: var(--r, 0deg);
+}
+
+/*
+ * Ambient motion is driven by scrolling, never by a timer: nothing moves unless the user moves it,
+ * so no pause control is needed (WCAG 2.2.2) and it costs no JavaScript. Browsers without
+ * scroll timelines simply show the static layout.
+ */
+@keyframes tape-slide {
+	to {
+		transform: translateX(-12%);
+	}
+}
+
+@keyframes spin-on-scroll {
+	to {
+		rotate: 360deg;
+	}
+}
+
+/* Uses the individual translate and rotate properties, so it composes with any transform. */
+@keyframes parallax {
+	from {
+		translate: calc(var(--drift, 0px) * -1) calc(var(--depth, 0) * 50svh);
+		rotate: calc(var(--r, 0deg) - var(--tilt, 0deg));
+	}
+
+	to {
+		translate: var(--drift, 0px) calc(var(--depth, 0) * -50svh);
+		rotate: calc(var(--r, 0deg) + var(--tilt, 0deg));
+	}
+}
+
+@keyframes rise {
+	from {
+		translate: 0 var(--px-rise, 100%);
+	}
+
+	to {
+		translate: 0 0;
+	}
+}
+
+/* A slab is thrown onto the page and lands flat. Text is never hidden, only displaced, and it stops moving before it is read. */
+@keyframes slap {
+	from {
+		translate: var(--slap-x, 0) var(--slap-y, 5rem);
+		rotate: var(--slap-r, 2.5deg);
+	}
+
+	to {
+		translate: 0 0;
+		rotate: 0deg;
+	}
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	@supports (animation-timeline: view()) {
+		[class*='px-'] {
+			animation: parallax linear both;
+		}
+
+		/* Separate selector on purpose: the CSS minifier would otherwise merge this into the
+		   shorthand above, which browsers reject. */
+		html [class*='px-'] {
+			animation-timeline: view();
+		}
+
+		html .px-rise {
+			animation-name: rise;
+			/* Done once it is fully in view, so it also lands on phones, where little page is left below. */
+			animation-range: entry 0% entry 100%;
+		}
+
+		.slap,
+		.cards > li,
+		.label-title {
+			animation: slap ease-out both;
+		}
+
+		html .slap,
+		html .cards > li,
+		html .label-title {
+			animation-timeline: view();
+			animation-range: entry 0% cover var(--slap-end, 36%);
+		}
+
+		html .label-title {
+			--slap-x: -4rem;
+			--slap-y: 1rem;
+			--slap-r: -5deg;
+		}
+
+		.spin {
+			animation: spin-on-scroll linear both;
+		}
+
+		html .spin {
+			animation-timeline: scroll(root);
+		}
+	}
+}
+
+/* Respect the user's motion preference: shorten animations and view transitions to near-instant. */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}

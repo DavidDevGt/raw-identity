@@ -1,0 +1,49 @@
+---
+import { Font } from 'astro:assets';
+import { ClientRouter } from 'astro:transitions';
+import '../styles/global.css';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import SEO from '../components/SEO.astro';
+import SkipLink from '../components/SkipLink.astro';
+import type { Lang } from '../i18n/paths';
+
+interface Props {
+	lang: Lang;
+	title: string;
+	description: string;
+	noindex?: boolean;
+	structured?: Record<string, unknown>[];
+}
+
+const { lang, title, description, noindex, structured } = Astro.props;
+---
+
+<!doctype html>
+<html lang={lang}>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="theme-color" content="#08060f" />
+		<link rel="icon" href="/favicon.ico" sizes="32x32" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+		<link rel="manifest" href="/site.webmanifest" />
+		<SEO title={title} description={description} lang={lang} noindex={noindex} structured={structured} />
+		<Font cssVariable="--font-display" preload />
+		<Font cssVariable="--font-sans" preload />
+		<Font cssVariable="--font-mono" />
+		<ClientRouter />
+	</head>
+	<body>
+		<SkipLink lang={lang} />
+		<Header lang={lang} />
+		<main id="main" tabindex="-1">
+			<slot />
+		</main>
+		<Footer lang={lang} />
+		<script>
+			import '../scripts/vitals';
+		</script>
+	</body>
+</html>
