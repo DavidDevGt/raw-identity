@@ -21,7 +21,7 @@
     "verify": "pnpm typecheck && pnpm test && pnpm build && pnpm lighthouse"
   },
   "dependencies": {
-    "astro": "^7.4.5",
+    "astro": "^7.4.11",
     "web-vitals": "^6.2.3"
   },
   "devDependencies": {
